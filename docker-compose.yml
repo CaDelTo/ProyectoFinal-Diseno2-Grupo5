@@ -75,12 +75,16 @@ services:
       - internal
       - public
     depends_on:
-      - ms-auth
-      - ms-crear
-      - ms-modificar
-      - ms-borrar
-      - ms-log
-      - ms-nlp
+      ms-auth:
+        condition: service_healthy
+      ms-crear:
+        condition: service_healthy
+      ms-modificar:
+        condition: service_healthy
+      ms-borrar:
+        condition: service_healthy
+      ms-log:
+        condition: service_healthy
     healthcheck:
       test: ['CMD-SHELL', 'curl -fsS http://localhost:80/health || exit 1']
       interval: 15s

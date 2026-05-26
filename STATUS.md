@@ -12,13 +12,13 @@
 
 Proyecto: **Sistema de Gestión de Datos Personales** — Universidad del Norte, Diseño de Software II, 2026.
 
-Fase actual: **SEIS MICROSERVICIOS IMPLEMENTADOS**.
+Fase actual: **GATEWAY + 6 MICROSERVICIOS IMPLEMENTADOS**.
 
 - ✅ 12/12 ADRs aceptadas · 🟡 2 ADRs nuevas (0013 accepted · 0014 proposed).
 - ✅ 11/11 specs aprobadas (000–010) · 🆕 2 specs en draft (011–012).
-- ✅ 8/11 specs implementadas (000, 001, 003, 004, 005, 006, 007, 008).
-- ✅ 6/8 microservicios funcionales (ms-auth, ms-log, ms-crear, ms-consultar, ms-modificar, ms-borrar).
-- ✅ **281 tests verdes** (errors 11 · logger 18 · validators 46 · health 6 · ms-auth 44 · ms-log 29 · ms-crear 43 · db 18 · ms-consultar 20 · ms-modificar 28 · ms-borrar 18).
+- ✅ 9/11 specs implementadas (000, 001, 002, 003, 004, 005, 006, 007, 008).
+- ✅ 7/8 microservicios funcionales + API Gateway (ms-auth, ms-log, ms-crear, ms-consultar, ms-modificar, ms-borrar, ms-nlp placeholder).
+- ✅ **307 tests verdes** (errors 11 · logger 18 · validators 46 · health 6 · ms-auth 44 · ms-log 29 · ms-crear 43 · db 18 · ms-consultar 20 · ms-modificar 28 · ms-borrar 18 · api-gateway 26).
 
 **Próximo paso recomendado:** aprobar specs 011 y 012 (draft) y ADR 0014 (proposed), o implementar `spec 009` (ms-nlp).
 
@@ -51,7 +51,7 @@ Fase actual: **SEIS MICROSERVICIOS IMPLEMENTADOS**.
 |---|---|---|---|---|---|
 | 000 | Arquitectura general | approved | 🟡 parcial (contratos + scaffold) | libs/shared 100 % | todos |
 | 001 | Auth SSO (ms-auth) | **implemented** | ✅ completo | 82.85 % branches · 99.2 % stmts | 002, 010 |
-| 002 | API Gateway | approved | — | — | 004–009 (runtime) |
+| 002 | API Gateway | **implemented** | ✅ completo | 87.5 % branches · 100 % stmts | 004–009 (runtime) |
 | 003 | BD + Prisma + migraciones | **implemented** | ✅ completo | 100% cobertura index.ts + transactions.ts · 18 tests DB real | 001, 004–009 |
 | 004 | ms-crear | **implemented** | ✅ completo | 91.3 % branches · 98 % stmts | 010 |
 | 005 | ms-consultar (controlable) | **implemented** | ✅ completo | 83.33 % branches · 93.1 % stmts | 010 |
@@ -81,7 +81,7 @@ Fase actual: **SEIS MICROSERVICIOS IMPLEMENTADOS**.
 | Servicio | Dockerfile | Código | Tests verde | En compose | Healthcheck |
 |---|---|---|---|---|---|
 | frontend | 🟡 placeholder | — | — | ✓ | ✓ |
-| api-gateway | 🟡 placeholder | — | — | ✓ | ✓ |
+| api-gateway | ✅ Nginx+Node multi-stage | ✅ JWT validate + routing | ✅ 26 tests | ✓ | ✓ |
 | ms-auth | ✅ multi-stage | ✅ Express + PKCE | ✅ 44 tests | ✓ | ✓ |
 | ms-crear | ✅ multi-stage | ✅ Express + AWS S3 SDK | ✅ 43 tests | ✓ | ✓ |
 | ms-modificar | ✅ multi-stage | ✅ Express + optimistic lock | ✅ 28 tests | ✓ | ✓ |

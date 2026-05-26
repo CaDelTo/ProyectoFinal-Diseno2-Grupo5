@@ -1,7 +1,7 @@
 ---
 id: 002
 title: API Gateway con validación JWT y enrutamiento
-status: approved
+status: implemented
 owner: equipo
 created: 2026-05-24
 updated: 2026-05-24

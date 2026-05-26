@@ -1,15 +1,39 @@
-# Dockerfile placeholder usado temporalmente por servicios sin implementar.
-# Levanta un servidor mínimo respondiendo /health hasta que el servicio real exista.
-# REEMPLAZAR al implementar cada servicio (ver Dockerfile.node-template).
+# api-gateway — spec 002
+# Nginx (routing + rate limit) + Node.js middleware (JWT validate + health)
+# ======================================================================= Stage 1: build middleware
+FROM node:20-alpine AS build
+WORKDIR /app
 
-FROM node:20-alpine
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY libs ./libs
+COPY services/api-gateway ./services/api-gateway
+
+RUN corepack enable && pnpm install --frozen-lockfile
+RUN pnpm --filter api-gateway run build
+
+# ======================================================================= Stage 2: runtime
+FROM nginx:1.27-alpine AS runtime
+
+# Install Node.js (same major as build)
+RUN apk add --no-cache nodejs npm
+
 RUN addgroup -S app && adduser -S app -G app
-USER app
-WORKDIR /home/app
 
-# Inline server tiny — /health responde 200; cualquier otra ruta 503.
-ARG PORT=80
-ENV PORT=${PORT}
-EXPOSE ${PORT}
+WORKDIR /app
 
-CMD ["node", "-e", "const http=require('http');const port=process.env.PORT||4000;http.createServer((req,res)=>{if(req.url==='/health'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({status:'ok',placeholder:true,service:process.env.SERVICE_NAME||'?'}))}else{res.writeHead(503,{'Content-Type':'application/json'});res.end(JSON.stringify({error:'not implemented yet'}))}}).listen(port,()=>console.log('placeholder listening on '+port))"]
+COPY --from=build /app/services/api-gateway/dist    ./dist
+COPY --from=build /app/services/api-gateway/package.json ./
+COPY --from=build /app/node_modules                 ./node_modules
+COPY --from=build /app/libs/shared/errors/dist      ./node_modules/@shared/errors/dist
+COPY --from=build /app/libs/shared/logger/dist      ./node_modules/@shared/logger/dist
+
+# Nginx config (uses envsubst for RATE_LIMIT_* vars)
+COPY services/api-gateway/nginx/nginx.conf /etc/nginx/nginx.conf.template
+
+# Startup: substitute env vars in nginx.conf, then launch both processes
+COPY services/api-gateway/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+EXPOSE 80
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
