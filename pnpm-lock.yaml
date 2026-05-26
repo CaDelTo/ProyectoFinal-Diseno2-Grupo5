@@ -247,6 +247,52 @@ importers:
         specifier: ^7.0.0
         version: 7.2.2
 
+  services/ms-modificar:
+    dependencies:
+      '@aws-sdk/client-s3':
+        specifier: ^3.1053.0
+        version: 3.1053.0
+      '@aws-sdk/s3-request-presigner':
+        specifier: ^3.1053.0
+        version: 3.1053.0
+      '@shared/db':
+        specifier: workspace:*
+        version: link:../../libs/shared/db
+      '@shared/errors':
+        specifier: workspace:*
+        version: link:../../libs/shared/errors
+      '@shared/health':
+        specifier: workspace:*
+        version: link:../../libs/shared/health
+      '@shared/logger':
+        specifier: workspace:*
+        version: link:../../libs/shared/logger
+      '@shared/validators':
+        specifier: workspace:*
+        version: link:../../libs/shared/validators
+      express:
+        specifier: ^4.21.2
+        version: 4.22.2
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@testcontainers/postgresql':
+        specifier: ^10.28.0
+        version: 10.28.0
+      '@types/express':
+        specifier: ^4.17.21
+        version: 4.17.25
+      '@types/supertest':
+        specifier: ^6.0.2
+        version: 6.0.3
+      supertest:
+        specifier: ^7.0.0
+        version: 7.2.2
+      testcontainers:
+        specifier: ^10.28.0
+        version: 10.28.0
+
 packages:
 
   '@aws-crypto/crc32@5.2.0':
