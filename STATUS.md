@@ -12,15 +12,15 @@
 
 Proyecto: **Sistema de Gestión de Datos Personales** — Universidad del Norte, Diseño de Software II, 2026.
 
-Fase actual: **CINCO MICROSERVICIOS IMPLEMENTADOS**.
+Fase actual: **SEIS MICROSERVICIOS IMPLEMENTADOS**.
 
 - ✅ 12/12 ADRs aceptadas · 🟡 2 ADRs nuevas (0013 accepted · 0014 proposed).
 - ✅ 11/11 specs aprobadas (000–010) · 🆕 2 specs en draft (011–012).
-- ✅ 7/11 specs implementadas (000, 001, 003, 004, 005, 006, 008).
-- ✅ 5/8 microservicios funcionales (ms-auth, ms-log, ms-crear, ms-consultar, ms-modificar).
-- ✅ **263 tests verdes** (errors 11 · logger 18 · validators 46 · health 6 · ms-auth 44 · ms-log 29 · ms-crear 43 · db 18 · ms-consultar 20 · ms-modificar 28).
+- ✅ 8/11 specs implementadas (000, 001, 003, 004, 005, 006, 007, 008).
+- ✅ 6/8 microservicios funcionales (ms-auth, ms-log, ms-crear, ms-consultar, ms-modificar, ms-borrar).
+- ✅ **281 tests verdes** (errors 11 · logger 18 · validators 46 · health 6 · ms-auth 44 · ms-log 29 · ms-crear 43 · db 18 · ms-consultar 20 · ms-modificar 28 · ms-borrar 18).
 
-**Próximo paso recomendado:** implementar `spec 007` (ms-borrar). O aprobar specs 011 y 012 (draft) y ADR 0014 (proposed).
+**Próximo paso recomendado:** aprobar specs 011 y 012 (draft) y ADR 0014 (proposed), o implementar `spec 009` (ms-nlp).
 
 ---
 
@@ -55,8 +55,8 @@ Fase actual: **CINCO MICROSERVICIOS IMPLEMENTADOS**.
 | 003 | BD + Prisma + migraciones | **implemented** | ✅ completo | 100% cobertura index.ts + transactions.ts · 18 tests DB real | 001, 004–009 |
 | 004 | ms-crear | **implemented** | ✅ completo | 91.3 % branches · 98 % stmts | 010 |
 | 005 | ms-consultar (controlable) | **implemented** | ✅ completo | 83.33 % branches · 93.1 % stmts | 010 |
-| 006 | ms-modificar | approved | — | — | 010 |
-| 007 | ms-borrar (condicional) | approved | — | — | 010 · fix FK aplicado en spec 003 |
+| 006 | ms-modificar | **implemented** | ✅ completo | 93.1 % branches · 98.92 % stmts | 010 |
+| 007 | ms-borrar (condicional) | **implemented** | ✅ completo | 81.25 % branches · 100 % stmts | 010 |
 | 008 | ms-log | **implemented** | ✅ completo | 85.29 % branches · 92.92 % stmts | 005, 009, 010 |
 | 009 | ms-nlp RAG sobre n8n | approved | — | — | 010 |
 | 010 | Frontend React | approved | — | — | (último) |
@@ -84,9 +84,9 @@ Fase actual: **CINCO MICROSERVICIOS IMPLEMENTADOS**.
 | api-gateway | 🟡 placeholder | — | — | ✓ | ✓ |
 | ms-auth | ✅ multi-stage | ✅ Express + PKCE | ✅ 44 tests | ✓ | ✓ |
 | ms-crear | ✅ multi-stage | ✅ Express + AWS S3 SDK | ✅ 43 tests | ✓ | ✓ |
-| ms-modificar | 🟡 placeholder | — | — | ✓ | ✓ |
+| ms-modificar | ✅ multi-stage | ✅ Express + optimistic lock | ✅ 28 tests | ✓ | ✓ |
 | ms-consultar | ✅ multi-stage | ✅ Express + Prisma readonly | ✅ 20 tests | ✓ | ✓ (restart:no — ADR 0007) |
-| ms-borrar | 🟡 placeholder | — | — | ✓ | ✓ |
+| ms-borrar | ✅ multi-stage | ✅ Express + borrado condicional | ✅ 18 tests | ✓ | ✓ |
 | ms-log | ✅ multi-stage | ✅ Express + ExcelJS | ✅ 29 tests | ✓ | ✓ |
 | ms-nlp (n8n) | n/a (imagen oficial) | — | — | ✓ | ✓ |
 | db (postgres+pgvector) | n/a (imagen oficial) | n/a | n/a | ✓ | ✓ |

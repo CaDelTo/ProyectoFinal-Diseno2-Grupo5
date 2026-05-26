@@ -1,7 +1,7 @@
 ---
 id: 007
 title: ms-borrar — Borrar Persona (condicional)
-status: approved
+status: implemented
 owner: equipo
 created: 2026-05-24
 updated: 2026-05-24
