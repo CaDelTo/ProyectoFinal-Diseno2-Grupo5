@@ -1,0 +1,27 @@
+{
+  "name": "api-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@shared/errors": "workspace:*",
+    "@shared/logger": "workspace:*",
+    "express": "^4.21.2",
+    "jose": "^5.9.6",
+    "pino": "^9.7.0",
+    "pino-http": "^10.5.0",
+    "uuid": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/supertest": "^6.0.2",
+    "@types/uuid": "^10.0.0",
+    "supertest": "^7.1.0",
+    "testcontainers": "^10.28.0"
+  }
+}
