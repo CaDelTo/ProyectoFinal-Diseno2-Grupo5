@@ -1,7 +1,7 @@
 ---
 id: 009
 title: ms-nlp — Consulta en Lenguaje Natural con RAG sobre n8n
-status: approved
+status: implemented
 owner: equipo
 created: 2026-05-24
 updated: 2026-05-24

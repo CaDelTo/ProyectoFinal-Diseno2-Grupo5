@@ -4,7 +4,7 @@
 > Diseñado para que un agente recupere contexto en < 1.5k tokens sin alucinar.
 > Si necesitas detalle, ve a `specs/NNN-*.md` o `docs/adr/NNNN-*.md`.
 >
-> **Última actualización:** 2026-05-25 · **Actualizado por:** equipo
+> **Última actualización:** 2026-05-25 · **Actualizado por:** equipo (spec 009 implementada)
 
 ---
 
@@ -16,11 +16,11 @@ Fase actual: **GATEWAY + 6 MICROSERVICIOS IMPLEMENTADOS**.
 
 - ✅ 12/12 ADRs aceptadas · 🟡 2 ADRs nuevas (0013 accepted · 0014 proposed).
 - ✅ 11/11 specs aprobadas (000–010) · 🆕 2 specs en draft (011–012).
-- ✅ 9/11 specs implementadas (000, 001, 002, 003, 004, 005, 006, 007, 008).
-- ✅ 7/8 microservicios funcionales + API Gateway (ms-auth, ms-log, ms-crear, ms-consultar, ms-modificar, ms-borrar, ms-nlp placeholder).
-- ✅ **307 tests verdes** (errors 11 · logger 18 · validators 46 · health 6 · ms-auth 44 · ms-log 29 · ms-crear 43 · db 18 · ms-consultar 20 · ms-modificar 28 · ms-borrar 18 · api-gateway 26).
+- ✅ 10/11 specs implementadas (000, 001, 002, 003, 004, 005, 006, 007, 008, 009).
+- ✅ 8/8 microservicios funcionales + API Gateway (ms-auth, ms-log, ms-crear, ms-consultar, ms-modificar, ms-borrar, ms-nlp).
+- ✅ **325 tests verdes** (errors 11 · logger 18 · validators 46 · health 6 · ms-auth 44 · ms-log 29 · ms-crear 43 · db 18 · ms-consultar 20 · ms-modificar 28 · ms-borrar 18 · api-gateway 26 · ms-nlp 18).
 
-**Próximo paso recomendado:** aprobar specs 011 y 012 (draft) y ADR 0014 (proposed), o implementar `spec 009` (ms-nlp).
+**Próximo paso recomendado:** aprobar specs 011 y 012 (draft) y ADR 0014 (proposed), o implementar `spec 010` (frontend).
 
 ---
 
@@ -58,7 +58,7 @@ Fase actual: **GATEWAY + 6 MICROSERVICIOS IMPLEMENTADOS**.
 | 006 | ms-modificar | **implemented** | ✅ completo | 93.1 % branches · 98.92 % stmts | 010 |
 | 007 | ms-borrar (condicional) | **implemented** | ✅ completo | 81.25 % branches · 100 % stmts | 010 |
 | 008 | ms-log | **implemented** | ✅ completo | 85.29 % branches · 92.92 % stmts | 005, 009, 010 |
-| 009 | ms-nlp RAG sobre n8n | approved | — | — | 010 |
+| 009 | ms-nlp RAG sobre n8n | **implemented** | ✅ completo | 93% statements · 83.33% branches | 010 |
 | 010 | Frontend React | approved | — | — | (último) |
 | 011 | Reporte usuarios activos con permisos | **draft** | — | — | 010 |
 | 012 | Controles de seguridad transversales | **draft** | — | — | todos |
@@ -88,7 +88,7 @@ Fase actual: **GATEWAY + 6 MICROSERVICIOS IMPLEMENTADOS**.
 | ms-consultar | ✅ multi-stage | ✅ Express + Prisma readonly | ✅ 20 tests | ✓ | ✓ (restart:no — ADR 0007) |
 | ms-borrar | ✅ multi-stage | ✅ Express + borrado condicional | ✅ 18 tests | ✓ | ✓ |
 | ms-log | ✅ multi-stage | ✅ Express + ExcelJS | ✅ 29 tests | ✓ | ✓ |
-| ms-nlp (n8n) | n/a (imagen oficial) | — | — | ✓ | ✓ |
+| ms-nlp (n8n) | n/a (imagen oficial) | ✅ workflows JSON + lib helpers | ✅ 18 tests | ✓ | ✓ |
 | db (postgres+pgvector) | n/a (imagen oficial) | n/a | n/a | ✓ | ✓ |
 | storage (MinIO) | n/a (imagen oficial) | n/a | n/a | ✓ | ✓ |
 

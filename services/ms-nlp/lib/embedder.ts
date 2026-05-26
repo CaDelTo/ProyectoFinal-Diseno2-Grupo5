@@ -27,7 +27,9 @@ export async function embed(text: string, config: EmbedderConfig): Promise<numbe
       throw new RagError(`OpenAI embeddings failed: ${response.status}`);
     }
     const data = (await response.json()) as { data: Array<{ embedding: number[] }> };
-    return data.data[0].embedding;
+    const first = data.data[0];
+    if (!first) throw new RagError('OpenAI returned empty embedding list');
+    return first.embedding;
   } else {
     const model = config.model ?? 'nomic-embed-text';
     const response = await fetch(`${config.baseUrl}/api/embeddings`, {

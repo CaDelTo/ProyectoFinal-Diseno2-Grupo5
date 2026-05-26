@@ -1,0 +1,155 @@
+{
+  "name": "RAG Index",
+  "nodes": [
+    {
+      "id": "cron-trigger",
+      "name": "Cron Full Reindex",
+      "type": "n8n-nodes-base.cron",
+      "position": [240, 200],
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "hours", "hoursInterval": 1 }]
+        }
+      }
+    },
+    {
+      "id": "webhook-reindex",
+      "name": "Webhook Reindex Single",
+      "type": "n8n-nodes-base.webhook",
+      "position": [240, 400],
+      "parameters": {
+        "path": "rag-reindex/:doc",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "webhook-delete",
+      "name": "Webhook Delete Single",
+      "type": "n8n-nodes-base.webhook",
+      "position": [240, 600],
+      "parameters": {
+        "path": "rag-delete/:doc",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "validate-token",
+      "name": "Validate Internal Token",
+      "type": "n8n-nodes-base.code",
+      "position": [460, 400],
+      "parameters": {
+        "jsCode": "const token = $input.first().json.headers['x-internal-token'] ?? '';\nif (token !== $env.INTERNAL_TOKEN) {\n  throw new Error('Unauthorized');\n}\nreturn $input.all();"
+      }
+    },
+    {
+      "id": "fetch-persona",
+      "name": "Fetch Persona from DB",
+      "type": "n8n-nodes-base.postgres",
+      "position": [680, 400],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT p.primer_nombre, p.segundo_nombre, p.primer_apellido, p.segundo_apellido, p.tipo_documento, p.nro_documento, p.fecha_nacimiento::text, p.genero, p.correo, p.celular, p.estado FROM \"Persona\" p WHERE p.nro_documento = $1;",
+        "additionalFields": {}
+      }
+    },
+    {
+      "id": "build-resumen",
+      "name": "Build Resumen",
+      "type": "n8n-nodes-base.code",
+      "position": [900, 400],
+      "parameters": {
+        "jsCode": "const p = $input.first().json;\nconst nombre = [p.primer_nombre, p.segundo_nombre, p.primer_apellido, p.segundo_apellido].filter(Boolean).join(' ');\nconst resumen = `${nombre}, documento ${p.tipo_documento} ${p.nro_documento}, nacido el ${p.fecha_nacimiento}, género ${p.genero}, correo ${p.correo}, celular ${p.celular}. Estado: ${p.estado}.`;\nreturn [{ json: { ...p, contenido_resumido: resumen, fuente: `persona:${p.nro_documento}` } }];"
+      }
+    },
+    {
+      "id": "embed-resumen",
+      "name": "Embed Resumen",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "position": [1120, 400],
+      "parameters": {
+        "model": "text-embedding-3-small",
+        "options": {}
+      }
+    },
+    {
+      "id": "upsert-index",
+      "name": "Upsert RagDocIndice",
+      "type": "n8n-nodes-base.postgres",
+      "position": [1340, 400],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO \"RagDocIndice\" (fuente, contenido_resumido, embedding, actualizado_en) VALUES ($1, $2, $3::vector, NOW()) ON CONFLICT (fuente) DO UPDATE SET contenido_resumido = EXCLUDED.contenido_resumido, embedding = EXCLUDED.embedding, actualizado_en = NOW();",
+        "additionalFields": {}
+      }
+    },
+    {
+      "id": "respond-reindex",
+      "name": "Respond Reindexed",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [1560, 400],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"reindexed\": true }"
+      }
+    },
+    {
+      "id": "delete-from-index",
+      "name": "Delete from RagDocIndice",
+      "type": "n8n-nodes-base.postgres",
+      "position": [460, 600],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM \"RagDocIndice\" WHERE fuente = $1;",
+        "additionalFields": {}
+      }
+    },
+    {
+      "id": "respond-delete",
+      "name": "Respond Deleted",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [680, 600],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"deleted\": true }"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Reindex Single": {
+      "main": [[{ "node": "Validate Internal Token", "type": "main", "index": 0 }]]
+    },
+    "Validate Internal Token": {
+      "main": [[{ "node": "Fetch Persona from DB", "type": "main", "index": 0 }]]
+    },
+    "Fetch Persona from DB": {
+      "main": [[{ "node": "Build Resumen", "type": "main", "index": 0 }]]
+    },
+    "Build Resumen": {
+      "main": [[{ "node": "Embed Resumen", "type": "main", "index": 0 }]]
+    },
+    "Embed Resumen": {
+      "main": [[{ "node": "Upsert RagDocIndice", "type": "main", "index": 0 }]]
+    },
+    "Upsert RagDocIndice": {
+      "main": [[{ "node": "Respond Reindexed", "type": "main", "index": 0 }]]
+    },
+    "Webhook Delete Single": {
+      "main": [[{ "node": "Delete from RagDocIndice", "type": "main", "index": 0 }]]
+    },
+    "Delete from RagDocIndice": {
+      "main": [[{ "node": "Respond Deleted", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "pinData": {}
+}

@@ -1,0 +1,146 @@
+{
+  "name": "RAG Chat",
+  "nodes": [
+    {
+      "id": "chat-trigger",
+      "name": "Chat Trigger",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "position": [240, 300],
+      "parameters": {
+        "public": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "set-request-id",
+      "name": "Set Request ID",
+      "type": "n8n-nodes-base.code",
+      "position": [460, 300],
+      "parameters": {
+        "jsCode": "const { v7: uuidv7 } = require('uuid');\nconst requestId = $input.first().json.requestId ?? uuidv7();\nreturn [{ json: { ...($input.first().json), requestId } }];"
+      }
+    },
+    {
+      "id": "validate-message",
+      "name": "Validar message",
+      "type": "n8n-nodes-base.code",
+      "position": [680, 300],
+      "parameters": {
+        "jsCode": "const message = $input.first().json.message ?? '';\nif (!message || message.trim().length === 0) {\n  return [{ json: { answer: 'Pregunta no válida. Por favor escribe tu pregunta.', sources: [] } }];\n}\nif (message.length > 500) {\n  return [{ json: { answer: 'Pregunta demasiado larga (máximo 500 caracteres).', sources: [] } }];\n}\nreturn [{ json: $input.first().json }];"
+      }
+    },
+    {
+      "id": "embed-query",
+      "name": "Embed Query",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "position": [900, 300],
+      "parameters": {
+        "model": "text-embedding-3-small",
+        "options": {}
+      }
+    },
+    {
+      "id": "retrieve-context",
+      "name": "Retrieve Context",
+      "type": "n8n-nodes-base.postgres",
+      "position": [1120, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT fuente, contenido_resumido FROM \"RagDocIndice\" ORDER BY embedding <-> $1::vector LIMIT 5;",
+        "additionalFields": {}
+      }
+    },
+    {
+      "id": "build-prompt",
+      "name": "Build Prompt",
+      "type": "n8n-nodes-base.code",
+      "position": [1340, 300],
+      "parameters": {
+        "jsCode": "const message = $('Chat Trigger').first().json.message;\nconst docs = $input.all();\nconst context = docs.map(d => d.json.contenido_resumido);\n\nconst systemInstruction = `Eres un asistente que responde preguntas sobre el registro de personas de la institución. Usa únicamente los datos provistos en el CONTEXTO. Si la respuesta no está en el contexto, di \"No tengo información suficiente\". Responde en español, una sola oración.`;\nconst contextText = context.map(c => `- ${c}`).join('\\n');\nconst prompt = `${systemInstruction}\\n\\nCONTEXTO:\\n${contextText}\\n\\nPREGUNTA: ${message}`;\n\nreturn [{ json: { prompt, message, documents: docs.map(d => d.json), sources: docs.map(d => ({ nro_documento: d.json.fuente.replace('persona:', '') })) } }];"
+      }
+    },
+    {
+      "id": "llm-call",
+      "name": "LLM Call",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [1560, 300],
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 200
+        }
+      }
+    },
+    {
+      "id": "log-query",
+      "name": "Log QUERY_NL",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1780, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "http://api-gateway/api/v1/logs/internal",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Internal-Token", "value": "={{ $env.INTERNAL_TOKEN }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "tipo_transaccion", "value": "QUERY_NL" },
+            { "name": "id_usuario", "value": "={{ $('Chat Trigger').first().json.userId ?? '' }}" },
+            { "name": "pregunta_rag", "value": "={{ $('Chat Trigger').first().json.message }}" },
+            { "name": "respuesta_rag", "value": "={{ $('LLM Call').first().json.message }}" },
+            { "name": "detalle", "value": "={{ JSON.stringify({ sources: $('Build Prompt').first().json.sources }) }}" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "respond-to-chat",
+      "name": "Respond to Chat",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "position": [2000, 300],
+      "parameters": {
+        "respondWith": "allIncomingItems"
+      }
+    }
+  ],
+  "connections": {
+    "Chat Trigger": {
+      "main": [[{ "node": "Set Request ID", "type": "main", "index": 0 }]]
+    },
+    "Set Request ID": {
+      "main": [[{ "node": "Validar message", "type": "main", "index": 0 }]]
+    },
+    "Validar message": {
+      "main": [[{ "node": "Embed Query", "type": "main", "index": 0 }]]
+    },
+    "Embed Query": {
+      "main": [[{ "node": "Retrieve Context", "type": "main", "index": 0 }]]
+    },
+    "Retrieve Context": {
+      "main": [[{ "node": "Build Prompt", "type": "main", "index": 0 }]]
+    },
+    "Build Prompt": {
+      "main": [[{ "node": "LLM Call", "type": "main", "index": 0 }]]
+    },
+    "LLM Call": {
+      "main": [[{ "node": "Log QUERY_NL", "type": "main", "index": 0 }]]
+    },
+    "Log QUERY_NL": {
+      "main": [[{ "node": "Respond to Chat", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "pinData": {}
+}
