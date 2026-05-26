@@ -1,16 +1,23 @@
+import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { embed, RagError } from '../../lib/embedder.js';
 
 describe('embed', () => {
+  let originalFetch: typeof global.fetch;
+
+  beforeEach(() => {
+    originalFetch = global.fetch;
+  });
+
   afterEach(() => {
-    jest.restoreAllMocks();
+    global.fetch = originalFetch;
   });
 
   it('OpenAI cliente devuelve vector de 1536 dimensiones', async () => {
     const fakeEmbedding = Array.from({ length: 1536 }, (_, i) => i * 0.001);
-    global.fetch = jest.fn().mockResolvedValue({
+    global.fetch = jest.fn<typeof fetch>().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ data: [{ embedding: fakeEmbedding }] }),
-    }) as jest.MockedFunction<typeof fetch>;
+      json: async () => ({ data: [{ embedding: fakeEmbedding }] }),
+    } as Response);
 
     const result = await embed('texto de prueba', { provider: 'openai', apiKey: 'test-key' });
 
@@ -20,10 +27,10 @@ describe('embed', () => {
 
   it('Ollama cliente devuelve vector de 768 dimensiones', async () => {
     const fakeEmbedding = Array.from({ length: 768 }, (_, i) => i * 0.001);
-    global.fetch = jest.fn().mockResolvedValue({
+    global.fetch = jest.fn<typeof fetch>().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ embedding: fakeEmbedding }),
-    }) as jest.MockedFunction<typeof fetch>;
+      json: async () => ({ embedding: fakeEmbedding }),
+    } as Response);
 
     const result = await embed('texto de prueba', {
       provider: 'ollama',
@@ -35,10 +42,10 @@ describe('embed', () => {
   });
 
   it('error de upstream propaga RagError', async () => {
-    global.fetch = jest.fn().mockResolvedValue({
+    global.fetch = jest.fn<typeof fetch>().mockResolvedValue({
       ok: false,
       status: 500,
-    }) as jest.MockedFunction<typeof fetch>;
+    } as Response);
 
     await expect(
       embed('texto', { provider: 'openai', apiKey: 'test-key' }),
