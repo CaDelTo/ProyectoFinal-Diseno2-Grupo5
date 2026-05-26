@@ -1,7 +1,7 @@
 ---
 id: 012
 title: Controles de seguridad transversales
-status: draft
+status: approved
 owner: equipo
 created: 2026-05-25
 updated: 2026-05-25
@@ -188,3 +188,4 @@ Niveles aplicables (ver `AGENT.md` §9.1): **N1, N2, N4**.
 - OWASP ZAP scan automatizado en CI: backlog.
 - HTTPS/TLS para despliegue real: backlog.
 - Cifrado en reposo de campos PII sensibles: backlog.
+- **CORS allowlist**: spec 002 tiene `allowlist desde .env` pendiente; se cierra al implementar spec 010 (frontend). No está en el mapa de controles de este spec pero es complementario al control CSRF.

@@ -1,7 +1,7 @@
 ---
 id: 011
 title: ms-auth — Reporte de usuarios activos con permisos
-status: draft
+status: approved
 owner: equipo
 created: 2026-05-25
 updated: 2026-05-25
@@ -167,6 +167,7 @@ GET /api/v1/auth/usuarios/activos/export.xlsx
 
 - ¿Cómo se asigna `rol = "admin"` a un usuario? Por ahora, directamente en BD con script. Si se necesita UI para esto, spec aparte.
 - ¿El reporte debe incluir usuarios que nunca volvieron a acceder (solo tienen `creado_en`)? Por ahora sí — cualquier registro en `UsuarioSistema` aparece.
+- **AdminGuard y fuente del `rol`**: El JWT de Entra ID no incluye el campo `rol` del sistema. El guard debe leer el header `X-User-Id` (propagado por el Gateway desde el claim `sub`) y consultar `UsuarioSistema.rol` en BD. Los nombres de test describen comportamiento; la implementación usa lookup por `X-User-Id`.
 - ¿`exceljs` debería moverse a `libs/shared`? Evaluar al implementar; evitar duplicar dependencia entre ms-log y ms-auth.
 
 ## 10. Validación
