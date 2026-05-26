@@ -1,10 +1,10 @@
 ---
 id: 011
 title: ms-auth — Reporte de usuarios activos con permisos
-status: approved
+status: implemented
 owner: equipo
 created: 2026-05-25
-updated: 2026-05-25
+updated: 2026-05-26
 ---
 
 # 011 — ms-auth — Reporte de usuarios activos con permisos

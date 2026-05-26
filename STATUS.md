@@ -4,7 +4,7 @@
 > Diseñado para que un agente recupere contexto en < 1.5k tokens sin alucinar.
 > Si necesitas detalle, ve a `specs/NNN-*.md` o `docs/adr/NNNN-*.md`.
 >
-> **Última actualización:** 2026-05-25 · **Actualizado por:** equipo (spec 012 implementada)
+> **Última actualización:** 2026-05-26 · **Actualizado por:** equipo (spec 011 implementada)
 
 ---
 
@@ -16,11 +16,11 @@ Fase actual: **GATEWAY + 6 MICROSERVICIOS IMPLEMENTADOS**.
 
 - ✅ 12/12 ADRs aceptadas · 🟡 2 ADRs nuevas (0013 accepted · 0014 proposed).
 - ✅ 13/13 specs aprobadas (000–012).
-- ✅ 11/12 specs implementadas (000, 001, 002, 003, 004, 005, 006, 007, 008, 009, 012).
+- ✅ 12/13 specs implementadas (000, 001, 002, 003, 004, 005, 006, 007, 008, 009, 011, 012).
 - ✅ 8/8 microservicios funcionales + API Gateway (ms-auth, ms-log, ms-crear, ms-consultar, ms-modificar, ms-borrar, ms-nlp).
-- ✅ **340 tests verdes** (errors 11 · logger 18 · validators 50 · health 6 · ms-auth 44 · ms-log 29 · ms-crear 43 · db 18 · ms-consultar 20 · ms-modificar 28 · ms-borrar 18 · api-gateway 37 · ms-nlp 18).
+- ✅ **366 tests verdes** (errors 11 · logger 18 · validators 50 · health 6 · ms-auth 66 · ms-log 29 · ms-crear 43 · db 18 · ms-consultar 20 · ms-modificar 28 · ms-borrar 18 · api-gateway 37 · ms-nlp 18 · +4 security tests).
 
-**Próximo paso recomendado:** aceptar ADR 0014 (proposed) e implementar specs 010, 011.
+**Próximo paso recomendado:** aceptar ADR 0014 (proposed) e implementar spec 010 (Frontend React).
 
 ---
 
@@ -60,7 +60,7 @@ Fase actual: **GATEWAY + 6 MICROSERVICIOS IMPLEMENTADOS**.
 | 008 | ms-log | **implemented** | ✅ completo | 85.29 % branches · 92.92 % stmts | 005, 009, 010 |
 | 009 | ms-nlp RAG sobre n8n | **implemented** | ✅ completo | 93% statements · 83.33% branches | 010 |
 | 010 | Frontend React | approved | — | — | (último) |
-| 011 | Reporte usuarios activos con permisos | **approved** | — | — | 010 |
+| 011 | Reporte usuarios activos con permisos | **implemented** | ✅ completo | 86% branches · 100% stmts src/usuarios | 010 |
 | 012 | Controles de seguridad transversales | **implemented** | ✅ completo | N/A (transversal) | todos |
 
 ---
@@ -82,7 +82,7 @@ Fase actual: **GATEWAY + 6 MICROSERVICIOS IMPLEMENTADOS**.
 |---|---|---|---|---|---|
 | frontend | 🟡 placeholder | — | — | ✓ | ✓ |
 | api-gateway | ✅ Nginx+Node multi-stage | ✅ JWT validate + routing | ✅ 26 tests | ✓ | ✓ |
-| ms-auth | ✅ multi-stage | ✅ Express + PKCE | ✅ 44 tests | ✓ | ✓ |
+| ms-auth | ✅ multi-stage | ✅ Express + PKCE + admin report | ✅ 66 tests | ✓ | ✓ |
 | ms-crear | ✅ multi-stage | ✅ Express + AWS S3 SDK | ✅ 43 tests | ✓ | ✓ |
 | ms-modificar | ✅ multi-stage | ✅ Express + optimistic lock | ✅ 28 tests | ✓ | ✓ |
 | ms-consultar | ✅ multi-stage | ✅ Express + Prisma readonly | ✅ 20 tests | ✓ | ✓ (restart:no — ADR 0007) |
@@ -110,7 +110,7 @@ _ninguno_
 - **Dimensión vector** (1536 OpenAI vs 768 Ollama) → spec 003 §9 + spec 009 §4.7. Decidir al elegir LLM por defecto. Actualmente schema `vector(1536)`.
 - **Hook `pre-commit`** con lint+test: deferido a cuando haya código de servicios.
 - **ADR 0014** — umbrales de rendimiento: **proposed**, pendiente de aprobación del equipo.
-- **Spec 011** — **approved**: pendiente de implementar.
+- **Spec 010** — **approved**: pendiente de implementar (Frontend React — último paso).
 
 ---
 
