@@ -8,6 +8,10 @@ import { createAuthRouter } from './auth/auth.router.js';
 import type { Pkce, Repository } from './auth/auth.router.js';
 import type { EntraClient } from './auth/entra.client.js';
 import type { StateCache } from './auth/state.cache.js';
+import { createUsuariosRouter } from './usuarios/usuarios.router.js';
+import type { UsuariosRepository } from './usuarios/usuarios.router.js';
+
+export type { UsuariosRepository };
 
 export interface AppDeps {
   pkce: Pkce;
@@ -15,6 +19,7 @@ export interface AppDeps {
   entra: EntraClient;
   repo: Repository;
   frontendUrl: string;
+  usuariosRepo: UsuariosRepository;
 }
 
 export function createApp(deps: AppDeps): express.Application {
@@ -32,6 +37,9 @@ export function createApp(deps: AppDeps): express.Application {
     const report = await runHealth({ service: 'ms-auth' });
     res.status(report.httpStatus).json(report);
   });
+
+  // spec 011 — reporte de usuarios activos (requiere admin)
+  app.use('/api/v1/auth/usuarios', createUsuariosRouter({ usuariosRepo: deps.usuariosRepo }));
 
   app.use('/', createAuthRouter({ ...deps, log }));
 

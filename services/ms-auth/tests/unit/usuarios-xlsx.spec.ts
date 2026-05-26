@@ -20,7 +20,23 @@ const fixture: UsuarioXlsxRow[] = [
   },
 ];
 
+const fixtureStrings: UsuarioXlsxRow[] = [
+  {
+    nombre: 'Carlos Ruiz',
+    correo: 'carlos@uninorte.edu.co',
+    rol: 'usuario',
+    ultimo_acceso: '2026-05-25T10:00:00.000Z', // string — prueba la rama else de toIso
+    creado_en: '2026-01-01T00:00:00.000Z',
+  },
+];
+
 describe('spec 011 — usuarios-xlsx', () => {
+  it('acepta fechas como strings (rama else de toIso)', async () => {
+    // debe generar el workbook sin errores
+    const buffer = await buildUsuariosXlsx(fixtureStrings);
+    expect(buffer.byteLength).toBeGreaterThan(100);
+  });
+
   it('genera workbook con 5 columnas esperadas', async () => {
     const buffer = await buildUsuariosXlsx(fixture);
     const workbook = new ExcelJS.Workbook();

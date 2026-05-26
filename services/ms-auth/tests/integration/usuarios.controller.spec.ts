@@ -131,6 +131,27 @@ describe('spec 011 — usuarios.controller (integración)', () => {
       expect(res.body.meta.total).toBe(2);
       expect(res.body.data).toHaveLength(2);
     });
+
+    it('limit negativo devuelve 400 con tipo validation-error', async () => {
+      const app = createApp(deps);
+      const res = await request(app)
+        .get('/api/v1/auth/usuarios/activos?limit=-1')
+        .set('x-user-id', 'admin-sub-id');
+
+      expect(res.status).toBe(400);
+      expect(res.body.type).toContain('validation-failed');
+    });
+
+    it('error inesperado en listActivos propaga al manejador global', async () => {
+      (deps.usuariosRepo.listActivos as jest.Mock).mockRejectedValue(new Error('db crash'));
+      const app = createApp(deps);
+      const res = await request(app)
+        .get('/api/v1/auth/usuarios/activos')
+        .set('x-user-id', 'admin-sub-id');
+
+      expect(res.status).toBe(500);
+      expect(res.headers['content-type']).toContain('application/problem+json');
+    });
   });
 
   describe('GET /api/v1/auth/usuarios/activos/export.xlsx', () => {
@@ -142,6 +163,16 @@ describe('spec 011 — usuarios.controller (integración)', () => {
 
       expect(res.status).toBe(200);
       expect(res.headers['content-type']).toContain(XLSX_MIME);
+    });
+
+    it('error en listActivos del export propaga al manejador global', async () => {
+      (deps.usuariosRepo.listActivos as jest.Mock).mockRejectedValue(new Error('xlsx crash'));
+      const app = createApp(deps);
+      const res = await request(app)
+        .get('/api/v1/auth/usuarios/activos/export.xlsx')
+        .set('x-user-id', 'admin-sub-id');
+
+      expect(res.status).toBe(500);
     });
   });
 });

@@ -34,3 +34,36 @@ export async function findUsuarioById(
     where: { id_usuario: idUsuario },
   });
 }
+
+/**
+ * Busca el rol de un usuario por su identificador_sso (= X-User-Id propagado por el Gateway).
+ * Retorna el rol ("usuario" | "admin") o null si no existe.
+ */
+export async function findRolByIdentificadorSso(
+  prisma: PrismaClient,
+  identificadorSso: string,
+): Promise<string | null> {
+  const usuario = await prisma.usuarioSistema.findUnique({
+    where: { identificador_sso: identificadorSso },
+    select: { rol: true },
+  });
+  return usuario?.rol ?? null;
+}
+
+/** Lista usuarios activos ordenados por ultimo_acceso DESC. */
+export async function listUsuariosActivos(
+  prisma: PrismaClient,
+  limit: number,
+  offset: number,
+): Promise<UsuarioSistema[]> {
+  return prisma.usuarioSistema.findMany({
+    orderBy: { ultimo_acceso: 'desc' },
+    take: limit,
+    skip: offset,
+  });
+}
+
+/** Conteo total de usuarios del sistema. */
+export async function countUsuariosActivos(prisma: PrismaClient): Promise<number> {
+  return prisma.usuarioSistema.count();
+}

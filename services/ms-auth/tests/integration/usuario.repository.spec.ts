@@ -1,15 +1,25 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { upsertUsuario, findUsuarioById } from '../../src/usuario/usuario.repository.js';
+import {
+  upsertUsuario,
+  findUsuarioById,
+  findRolByIdentificadorSso,
+  listUsuariosActivos,
+  countUsuariosActivos,
+} from '../../src/usuario/usuario.repository.js';
 
 // Mock de Prisma para el ciclo TDD local.
 // En el entorno docker-compose se sustituye por la BD real.
 const mockUpsert = jest.fn();
 const mockFindUnique = jest.fn();
+const mockFindMany = jest.fn();
+const mockCount = jest.fn();
 
 const mockPrisma = {
   usuarioSistema: {
     upsert: mockUpsert,
     findUnique: mockFindUnique,
+    findMany: mockFindMany,
+    count: mockCount,
   },
 };
 
@@ -94,6 +104,49 @@ describe('usuario.repository', () => {
 
       const result = await findUsuarioById(mockPrisma as never, 'nonexistent');
       expect(result).toBeNull();
+    });
+  });
+
+  describe('findRolByIdentificadorSso', () => {
+    it('retorna el rol si existe el usuario', async () => {
+      mockFindUnique.mockResolvedValueOnce({ rol: 'admin' });
+
+      const result = await findRolByIdentificadorSso(mockPrisma as never, 'sub-abc');
+      expect(result).toBe('admin');
+      expect(mockFindUnique).toHaveBeenCalledWith({
+        where: { identificador_sso: 'sub-abc' },
+        select: { rol: true },
+      });
+    });
+
+    it('retorna null si el usuario no existe', async () => {
+      mockFindUnique.mockResolvedValueOnce(null);
+
+      const result = await findRolByIdentificadorSso(mockPrisma as never, 'unknown-sub');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('listUsuariosActivos', () => {
+    it('llama findMany con orderBy ultimo_acceso desc y paginación', async () => {
+      mockFindMany.mockResolvedValueOnce([testUser]);
+
+      const result = await listUsuariosActivos(mockPrisma as never, 50, 0);
+      expect(result).toHaveLength(1);
+      expect(mockFindMany).toHaveBeenCalledWith({
+        orderBy: { ultimo_acceso: 'desc' },
+        take: 50,
+        skip: 0,
+      });
+    });
+  });
+
+  describe('countUsuariosActivos', () => {
+    it('retorna el conteo de usuarios', async () => {
+      mockCount.mockResolvedValueOnce(5);
+
+      const result = await countUsuariosActivos(mockPrisma as never);
+      expect(result).toBe(5);
     });
   });
 });

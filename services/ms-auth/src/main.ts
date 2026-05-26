@@ -2,7 +2,13 @@ import { createApp } from './app.js';
 import { createStateCache } from './auth/state.cache.js';
 import { createEntraClient } from './auth/entra.client.js';
 import * as pkceModule from './auth/pkce.js';
-import { upsertUsuario, findUsuarioById } from './usuario/usuario.repository.js';
+import {
+  upsertUsuario,
+  findUsuarioById,
+  findRolByIdentificadorSso,
+  listUsuariosActivos,
+  countUsuariosActivos,
+} from './usuario/usuario.repository.js';
 import { PrismaClient } from '@shared/db';
 import { createLogger } from '@shared/logger';
 
@@ -34,6 +40,11 @@ const app = createApp({
     findById: (id) => findUsuarioById(prisma, id),
   },
   frontendUrl: process.env['FRONTEND_URL'] ?? 'http://localhost:3000',
+  usuariosRepo: {
+    findRolByUserId: (userId) => findRolByIdentificadorSso(prisma, userId),
+    listActivos: (limit, offset) => listUsuariosActivos(prisma, limit, offset),
+    countActivos: () => countUsuariosActivos(prisma),
+  },
 });
 
 const PORT = Number(process.env['PORT'] ?? 4000);
