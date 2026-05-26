@@ -1,4 +1,5 @@
 import express from 'express';
+import helmet from 'helmet';
 import type { Request, Response, NextFunction } from 'express';
 import { buildProblemDetails, PROBLEM_CONTENT_TYPE } from '@shared/errors';
 import { createModificarRouter } from './persona/modificar.router.js';
@@ -14,6 +15,7 @@ export interface AppDeps {
 
 export function createApp(deps: AppDeps): express.Application {
   const app = express();
+  app.use(helmet());
   app.use(express.json());
 
   app.get('/health', async (_req, res) => {

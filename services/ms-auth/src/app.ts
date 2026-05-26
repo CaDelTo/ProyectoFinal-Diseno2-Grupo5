@@ -1,4 +1,5 @@
 import express from 'express';
+import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import type { Request, Response, NextFunction } from 'express';
 import { runHealth } from '@shared/health';
@@ -23,6 +24,7 @@ export function createApp(deps: AppDeps): express.Application {
     },
   };
   const app = express();
+  app.use(helmet());
   app.use(express.json());
   app.use(cookieParser());
 

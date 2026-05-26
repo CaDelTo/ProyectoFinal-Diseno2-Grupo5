@@ -1,6 +1,7 @@
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
 import prettier from 'eslint-config-prettier';
+import reactPlugin from 'eslint-plugin-react';
 
 export default [
   {
@@ -43,6 +44,12 @@ export default [
         },
       ],
     },
+  },
+  // C-03 (spec 012) — prohíbe dangerouslySetInnerHTML en código React
+  {
+    files: ['**/*.tsx', '**/*.jsx'],
+    plugins: { react: reactPlugin },
+    rules: { 'react/no-danger': 'error' },
   },
   prettier,
 ];

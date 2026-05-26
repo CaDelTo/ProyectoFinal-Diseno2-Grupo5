@@ -12,4 +12,5 @@ ARG PORT=80
 ENV PORT=${PORT}
 EXPOSE ${PORT}
 
-CMD ["node", "-e", "const http=require('http');const port=process.env.PORT||4000;http.createServer((req,res)=>{if(req.url==='/health'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({status:'ok',placeholder:true,service:process.env.SERVICE_NAME||'?'}))}else{res.writeHead(503,{'Content-Type':'application/json'});res.end(JSON.stringify({error:'not implemented yet'}))}}).listen(port,()=>console.log('placeholder listening on '+port))"]
+# C-01 (spec 012): security headers presentes incluso en el placeholder
+CMD ["node", "-e", "const http=require('http');const port=process.env.PORT||4000;const SEC={'Content-Security-Policy':\"default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'\",'X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY'};http.createServer((req,res)=>{if(req.url==='/health'){res.writeHead(200,{...SEC,'Content-Type':'application/json'});res.end(JSON.stringify({status:'ok',placeholder:true}))}else{res.writeHead(503,{...SEC,'Content-Type':'application/json'});res.end(JSON.stringify({error:'not implemented yet'}))}}).listen(port,()=>console.log('placeholder listening on '+port))"]

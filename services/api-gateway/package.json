@@ -12,6 +12,7 @@
     "@shared/errors": "workspace:*",
     "@shared/logger": "workspace:*",
     "express": "^4.21.2",
+    "helmet": "^8.2.0",
     "jose": "^5.9.6",
     "pino": "^9.7.0",
     "pino-http": "^10.5.0",

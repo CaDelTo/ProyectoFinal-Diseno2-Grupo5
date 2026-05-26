@@ -18,6 +18,7 @@
     "@shared/health": "workspace:*",
     "@shared/logger": "workspace:*",
     "express": "^4.21.2",
+    "helmet": "^8.2.0",
     "zod": "^3.25.3"
   },
   "devDependencies": {
