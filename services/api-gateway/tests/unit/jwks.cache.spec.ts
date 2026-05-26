@@ -70,6 +70,26 @@ describe('JwksCache', () => {
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 
+  it('si fetch lanza error de red, sirve cache anterior y loggea warn', async () => {
+    const jwk = await makeJwk('kid-net');
+    const warnFn = jest.fn();
+    const mockFetch = jest
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ keys: [jwk] }) } as Response)
+      .mockRejectedValueOnce(new Error('ECONNREFUSED'));
+    global.fetch = mockFetch;
+
+    jest.useFakeTimers();
+    const cache = new JwksCache({ jwksUri: JWKS_URI, ttlMs: 100, logger: { warn: warnFn } });
+    await cache.getKey('kid-net');
+
+    jest.advanceTimersByTime(101);
+    const keyAfter = await cache.getKey('kid-net');
+
+    expect(keyAfter).toBeDefined();
+    expect(warnFn).toHaveBeenCalled();
+  });
+
   it('si Entra responde 5xx, sirve cache anterior y loggea warn', async () => {
     const jwk = await makeJwk('kid-4');
     const warnFn = jest.fn();
