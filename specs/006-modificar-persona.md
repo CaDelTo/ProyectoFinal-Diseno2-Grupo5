@@ -1,7 +1,7 @@
 ---
 id: 006
 title: ms-modificar — Modificar Datos Personales
-status: approved
+status: implemented
 owner: equipo
 created: 2026-05-24
 updated: 2026-05-24

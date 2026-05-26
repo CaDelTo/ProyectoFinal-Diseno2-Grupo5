@@ -34,4 +34,16 @@ describe('GET /health', () => {
     expect(res.status).toBe(200);
     expect(res.body.db).toBe('ok');
   });
+
+  it('devuelve db "down" y status 503 cuando DB down', async () => {
+    if (!prisma) throw new Error('TEST_DATABASE_URL no definida');
+    const repo = createModificarRepository(prisma);
+    const ping = jest.fn<() => Promise<void>>().mockRejectedValue(new Error('connection refused'));
+    const app = createApp({ repo, storage: makeStorage(), buildFotoUrl: (k) => k, ping });
+
+    const res = await request(app).get('/health');
+
+    expect(res.status).toBe(503);
+    expect(res.body.db).toBe('down');
+  });
 });

@@ -12,15 +12,15 @@
 
 Proyecto: **Sistema de Gestión de Datos Personales** — Universidad del Norte, Diseño de Software II, 2026.
 
-Fase actual: **CUATRO MICROSERVICIOS IMPLEMENTADOS**.
+Fase actual: **CINCO MICROSERVICIOS IMPLEMENTADOS**.
 
 - ✅ 12/12 ADRs aceptadas · 🟡 2 ADRs nuevas (0013 accepted · 0014 proposed).
 - ✅ 11/11 specs aprobadas (000–010) · 🆕 2 specs en draft (011–012).
-- ✅ 6/11 specs implementadas (000, 001, 003, 004, 005, 008).
-- ✅ 4/8 microservicios funcionales (ms-auth, ms-log, ms-crear, ms-consultar).
-- ✅ **235 tests verdes** (errors 11 · logger 18 · validators 46 · health 6 · ms-auth 44 · ms-log 29 · ms-crear 43 · db 18 · ms-consultar 20).
+- ✅ 7/11 specs implementadas (000, 001, 003, 004, 005, 006, 008).
+- ✅ 5/8 microservicios funcionales (ms-auth, ms-log, ms-crear, ms-consultar, ms-modificar).
+- ✅ **263 tests verdes** (errors 11 · logger 18 · validators 46 · health 6 · ms-auth 44 · ms-log 29 · ms-crear 43 · db 18 · ms-consultar 20 · ms-modificar 28).
 
-**Próximo paso recomendado:** implementar `spec 006` (ms-modificar) o `spec 007` (ms-borrar). O aprobar specs 011 y 012 (draft) y ADR 0014 (proposed).
+**Próximo paso recomendado:** implementar `spec 007` (ms-borrar). O aprobar specs 011 y 012 (draft) y ADR 0014 (proposed).
 
 ---
 

@@ -32,6 +32,26 @@ module.exports = async function globalSetup() {
     await prisma.$executeRawUnsafe(stmt);
   }
 
+  // Seed: test users (for id_usuario FK in LogTransaccion)
+  await prisma.usuarioSistema.createMany({
+    data: [
+      {
+        id_usuario: 'user-1',
+        proveedor_sso: 'test',
+        identificador_sso: 'test-user-1',
+        correo: 'user1@test.com',
+        nombre: 'Test User 1',
+      },
+      {
+        id_usuario: 'user-2',
+        proveedor_sso: 'test',
+        identificador_sso: 'test-user-2',
+        correo: 'user2@test.com',
+        nombre: 'Test User 2',
+      },
+    ],
+  });
+
   // Seed: 1 persona ACTIVO, 1 INACTIVO, 1 ACTIVO para concurrencia
   await prisma.persona.createMany({
     data: [

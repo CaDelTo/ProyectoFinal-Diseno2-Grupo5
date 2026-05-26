@@ -182,3 +182,68 @@ describe('PUT /api/v1/personas/:doc — integración', () => {
     expect(campos).toContain('celular');
   });
 });
+
+describe('PUT /api/v1/personas/:doc — validaciones de entrada', () => {
+  it('doc con letras devuelve 404', async () => {
+    const res = await request(app)
+      .put('/api/v1/personas/ABCDEF')
+      .set('If-Match', new Date().toISOString())
+      .send({ correo: 'test@test.com' });
+    expect(res.status).toBe(404);
+  });
+
+  it('sin cabecera If-Match devuelve 400', async () => {
+    const res = await request(app)
+      .put('/api/v1/personas/98765432')
+      .send({ correo: 'test@test.com' });
+    expect(res.status).toBe(400);
+  });
+
+  it('body vacío devuelve 400 empty-update', async () => {
+    const res = await request(app)
+      .put('/api/v1/personas/98765432')
+      .set('If-Match', new Date().toISOString())
+      .send({});
+    expect(res.status).toBe(400);
+    expect(res.body.type).toContain('empty-update');
+  });
+
+  it('correo inválido devuelve 400 validation-failed', async () => {
+    const res = await request(app)
+      .put('/api/v1/personas/98765432')
+      .set('If-Match', new Date().toISOString())
+      .send({ correo: 'not-an-email' });
+    expect(res.status).toBe(400);
+    expect(res.body.type).toContain('validation-failed');
+  });
+
+  it('POST /personas/_upload-url devuelve 201 con uploadUrl y objectKey', async () => {
+    const res = await request(app)
+      .post('/api/v1/personas/_upload-url')
+      .send({ contentType: 'image/png' });
+    expect(res.status).toBe(201);
+    expect(res.body.uploadUrl).toBe('https://minio.test/presigned');
+    expect(typeof res.body.objectKey).toBe('string');
+    expect(res.body.objectKey).toMatch(/^fotos\//);
+  });
+});
+
+describe('Error middleware', () => {
+  it('error inesperado devuelve 500 con type internal-error', async () => {
+    const badRepo = {
+      update: jest.fn<typeof app extends ReturnType<typeof createApp> ? never : never>().mockRejectedValue(new Error('unexpected db failure')),
+    };
+    const errorApp = createApp({
+      repo: badRepo as Parameters<typeof createApp>[0]['repo'],
+      storage,
+      buildFotoUrl,
+      ping: async () => {},
+    });
+    const res = await request(errorApp)
+      .put('/api/v1/personas/98765432')
+      .set('If-Match', new Date().toISOString())
+      .send({ correo: 'test@test.com' });
+    expect(res.status).toBe(500);
+    expect(res.body.type).toContain('internal-error');
+  });
+});

@@ -24,4 +24,11 @@ describe('computeDiff', () => {
     const result = computeDiff(actual, dto);
     expect(Object.keys(result)).not.toContain('celular');
   });
+
+  it('ignora claves cuyo valor es undefined en el dto', () => {
+    const actual = { correo: 'old@test.com' } as Record<string, unknown>;
+    const dto = { correo: undefined } as Record<string, unknown>;
+    const result = computeDiff(actual, dto);
+    expect(Object.keys(result)).toHaveLength(0);
+  });
 });

@@ -1,15 +1,28 @@
-# Dockerfile placeholder usado temporalmente por servicios sin implementar.
-# Levanta un servidor mínimo respondiendo /health hasta que el servicio real exista.
-# REEMPLAZAR al implementar cada servicio (ver Dockerfile.node-template).
+# ms-modificar — spec 006
+# =================================================================== Stage 1: build
+FROM node:20-alpine AS build
+WORKDIR /app
 
-FROM node:20-alpine
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY libs ./libs
+COPY services/ms-modificar ./services/ms-modificar
+
+RUN corepack enable && pnpm install --frozen-lockfile
+RUN pnpm --filter ms-modificar run build
+
+# =================================================================== Stage 2: runtime
+FROM node:20-alpine AS runtime
 RUN addgroup -S app && adduser -S app -G app
+WORKDIR /app
+
+COPY --from=build /app/services/ms-modificar/dist ./dist
+COPY --from=build /app/services/ms-modificar/package.json ./
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/libs/shared/db/generated ./libs/shared/db/generated
+
 USER app
-WORKDIR /home/app
+ENV NODE_ENV=production
+ENV PORT=4002
+EXPOSE 4002
 
-# Inline server tiny — /health responde 200; cualquier otra ruta 503.
-ARG PORT=4002
-ENV PORT=${PORT}
-EXPOSE ${PORT}
-
-CMD ["node", "-e", "const http=require('http');const port=process.env.PORT||4000;http.createServer((req,res)=>{if(req.url==='/health'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({status:'ok',placeholder:true,service:process.env.SERVICE_NAME||'?'}))}else{res.writeHead(503,{'Content-Type':'application/json'});res.end(JSON.stringify({error:'not implemented yet'}))}}).listen(port,()=>console.log('placeholder listening on '+port))"]
+CMD ["node", "dist/main.js"]
