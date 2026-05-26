@@ -4,7 +4,7 @@
 > Diseñado para que un agente recupere contexto en < 1.5k tokens sin alucinar.
 > Si necesitas detalle, ve a `specs/NNN-*.md` o `docs/adr/NNNN-*.md`.
 >
-> **Última actualización:** 2026-05-25 · **Actualizado por:** equipo (specs 011 y 012 aprobadas)
+> **Última actualización:** 2026-05-25 · **Actualizado por:** equipo (spec 012 implementada)
 
 ---
 
@@ -16,11 +16,11 @@ Fase actual: **GATEWAY + 6 MICROSERVICIOS IMPLEMENTADOS**.
 
 - ✅ 12/12 ADRs aceptadas · 🟡 2 ADRs nuevas (0013 accepted · 0014 proposed).
 - ✅ 13/13 specs aprobadas (000–012).
-- ✅ 10/11 specs implementadas (000, 001, 002, 003, 004, 005, 006, 007, 008, 009).
+- ✅ 11/12 specs implementadas (000, 001, 002, 003, 004, 005, 006, 007, 008, 009, 012).
 - ✅ 8/8 microservicios funcionales + API Gateway (ms-auth, ms-log, ms-crear, ms-consultar, ms-modificar, ms-borrar, ms-nlp).
-- ✅ **325 tests verdes** (errors 11 · logger 18 · validators 46 · health 6 · ms-auth 44 · ms-log 29 · ms-crear 43 · db 18 · ms-consultar 20 · ms-modificar 28 · ms-borrar 18 · api-gateway 26 · ms-nlp 18).
+- ✅ **340 tests verdes** (errors 11 · logger 18 · validators 50 · health 6 · ms-auth 44 · ms-log 29 · ms-crear 43 · db 18 · ms-consultar 20 · ms-modificar 28 · ms-borrar 18 · api-gateway 37 · ms-nlp 18).
 
-**Próximo paso recomendado:** aceptar ADR 0014 (proposed) e implementar specs 010, 011, 012.
+**Próximo paso recomendado:** aceptar ADR 0014 (proposed) e implementar specs 010, 011.
 
 ---
 
@@ -61,7 +61,7 @@ Fase actual: **GATEWAY + 6 MICROSERVICIOS IMPLEMENTADOS**.
 | 009 | ms-nlp RAG sobre n8n | **implemented** | ✅ completo | 93% statements · 83.33% branches | 010 |
 | 010 | Frontend React | approved | — | — | (último) |
 | 011 | Reporte usuarios activos con permisos | **approved** | — | — | 010 |
-| 012 | Controles de seguridad transversales | **approved** | — | — | todos |
+| 012 | Controles de seguridad transversales | **implemented** | ✅ completo | N/A (transversal) | todos |
 
 ---
 
@@ -110,7 +110,7 @@ _ninguno_
 - **Dimensión vector** (1536 OpenAI vs 768 Ollama) → spec 003 §9 + spec 009 §4.7. Decidir al elegir LLM por defecto. Actualmente schema `vector(1536)`.
 - **Hook `pre-commit`** con lint+test: deferido a cuando haya código de servicios.
 - **ADR 0014** — umbrales de rendimiento: **proposed**, pendiente de aprobación del equipo.
-- **Specs 011 y 012** — **approved**: listos para implementar.
+- **Spec 011** — **approved**: pendiente de implementar.
 
 ---
 

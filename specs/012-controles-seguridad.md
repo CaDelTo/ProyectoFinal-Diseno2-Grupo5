@@ -1,7 +1,7 @@
 ---
 id: 012
 title: Controles de seguridad transversales
-status: approved
+status: implemented
 owner: equipo
 created: 2026-05-25
 updated: 2026-05-25
