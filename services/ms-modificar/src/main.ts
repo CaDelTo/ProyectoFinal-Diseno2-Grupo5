@@ -5,20 +5,20 @@ import { createStorageClient } from './persona/storage.client.js';
 
 const PORT = process.env['PORT'] ?? '4002';
 const DATABASE_URL = process.env['DATABASE_URL']!;
-const MINIO_ENDPOINT = process.env['MINIO_ENDPOINT'] ?? 'http://minio:9000';
-const MINIO_BUCKET = process.env['MINIO_BUCKET'] ?? 'datospersonales';
-const MINIO_ACCESS_KEY = process.env['MINIO_ACCESS_KEY'] ?? 'minioadmin';
-const MINIO_SECRET_KEY = process.env['MINIO_SECRET_KEY'] ?? 'minioadmin';
+const STORAGE_ENDPOINT = process.env['STORAGE_ENDPOINT'] ?? 'http://minio:9000';
+const STORAGE_BUCKET = process.env['STORAGE_BUCKET'] ?? 'datospersonales';
+const STORAGE_ACCESS_KEY = process.env['STORAGE_ACCESS_KEY'] ?? 'minioadmin';
+const STORAGE_SECRET_KEY = process.env['STORAGE_SECRET_KEY'] ?? 'minioadmin';
 
 const prisma = new PrismaClient({ datasources: { db: { url: DATABASE_URL } } });
 const repo = createModificarRepository(prisma);
 const storage = createStorageClient({
-  endpoint: MINIO_ENDPOINT,
-  bucket: MINIO_BUCKET,
-  accessKey: MINIO_ACCESS_KEY,
-  secretKey: MINIO_SECRET_KEY,
+  endpoint: STORAGE_ENDPOINT,
+  bucket: STORAGE_BUCKET,
+  accessKey: STORAGE_ACCESS_KEY,
+  secretKey: STORAGE_SECRET_KEY,
 });
-const buildFotoUrl = (key: string) => `${MINIO_ENDPOINT}/${MINIO_BUCKET}/${key}`;
+const buildFotoUrl = (key: string) => `${STORAGE_ENDPOINT}/${STORAGE_BUCKET}/${key}`;
 
 const app = createApp({
   repo,
