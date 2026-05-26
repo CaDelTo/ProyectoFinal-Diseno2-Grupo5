@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "composite": true,
+    "paths": {
+      "@shared/db": ["../../libs/shared/db/generated/index.d.ts"],
+      "@shared/errors": ["../../libs/shared/errors/dist/index.d.ts"],
+      "@shared/health": ["../../libs/shared/health/dist/index.d.ts"],
+      "@shared/logger": ["../../libs/shared/logger/dist/index.d.ts"]
+    }
+  },
+  "include": ["src/**/*"],
+  "references": [
+    { "path": "../../libs/shared/errors" },
+    { "path": "../../libs/shared/health" },
+    { "path": "../../libs/shared/logger" }
+  ]
+}

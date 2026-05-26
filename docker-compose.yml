@@ -1,0 +1,281 @@
+# Topología completa — spec 000 §4.1
+# Levanta: docker compose up --build
+# Detener ms-consultar (ADR 0007): docker compose stop ms-consultar
+
+name: datospersonales
+
+networks:
+  internal:
+    driver: bridge
+    internal: false
+  public:
+    driver: bridge
+
+volumes:
+  db_data:
+  storage_data:
+  n8n_data:
+
+services:
+  # ============================================================ Infraestructura
+  db:
+    image: pgvector/pgvector:pg15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
+      POSTGRES_DB: ${POSTGRES_DB:-datos}
+      READER_PASSWORD: ${READER_PASSWORD:-reader}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - internal
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-datos}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  storage:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - storage_data:/data
+    ports:
+      - '9001:9001' # consola web
+    networks:
+      - internal
+      - public
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fsS http://localhost:9000/minio/health/live || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================ Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    restart: unless-stopped
+    environment:
+      AZURE_TENANT_ID: ${AZURE_TENANT_ID}
+      AZURE_CLIENT_ID: ${AZURE_CLIENT_ID}
+      RATE_LIMIT_MUT: ${RATE_LIMIT_MUT:-60}
+      RATE_LIMIT_READ: ${RATE_LIMIT_READ:-200}
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN}
+    ports:
+      - '80:80'
+    networks:
+      - internal
+      - public
+    depends_on:
+      - ms-auth
+      - ms-crear
+      - ms-modificar
+      - ms-borrar
+      - ms-log
+      - ms-nlp
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fsS http://localhost:80/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ============================================================ Microservicios
+  ms-auth:
+    build:
+      context: .
+      dockerfile: services/ms-auth/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      AZURE_TENANT_ID: ${AZURE_TENANT_ID}
+      AZURE_CLIENT_ID: ${AZURE_CLIENT_ID}
+      AZURE_CLIENT_SECRET: ${AZURE_CLIENT_SECRET}
+      AZURE_REDIRECT_URI: ${AZURE_REDIRECT_URI}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      SERVICE_NAME: ms-auth
+    networks:
+      - internal
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fsS http://localhost:4000/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  ms-crear:
+    build:
+      context: .
+      dockerfile: services/ms-crear/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      STORAGE_BUCKET: ${STORAGE_BUCKET}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      SERVICE_NAME: ms-crear
+    networks:
+      - internal
+    depends_on:
+      db:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fsS http://localhost:4001/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  ms-modificar:
+    build:
+      context: .
+      dockerfile: services/ms-modificar/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      STORAGE_BUCKET: ${STORAGE_BUCKET}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      SERVICE_NAME: ms-modificar
+    networks:
+      - internal
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fsS http://localhost:4002/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ADR 0007 — contenedor controlable. restart: "no" para que `stop` no lo reinicie.
+  ms-consultar:
+    build:
+      context: .
+      dockerfile: services/ms-consultar/Dockerfile
+    restart: 'no'
+    environment:
+      DATABASE_URL_READONLY: ${DATABASE_URL_READONLY}
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN}
+      MS_LOG_URL: ${MS_LOG_URL:-http://ms-log:4005}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      SERVICE_NAME: ms-consultar
+    networks:
+      - internal
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fsS http://localhost:4003/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  ms-borrar:
+    build:
+      context: .
+      dockerfile: services/ms-borrar/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      STORAGE_BUCKET: ${STORAGE_BUCKET}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      SERVICE_NAME: ms-borrar
+    networks:
+      - internal
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fsS http://localhost:4004/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  ms-log:
+    build:
+      context: .
+      dockerfile: services/ms-log/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      SERVICE_NAME: ms-log
+    networks:
+      - internal
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fsS http://localhost:4005/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # n8n — ADR 0003. Pipeline RAG completo + chat.
+  ms-nlp:
+    image: n8nio/n8n:latest
+    restart: unless-stopped
+    environment:
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: db
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${POSTGRES_DB:-datos}
+      DB_POSTGRESDB_USER: ${POSTGRES_USER:-app}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD:-app}
+      N8N_OPENAI_KEY: ${N8N_OPENAI_KEY}
+      N8N_LOG_WEBHOOK: ${N8N_LOG_WEBHOOK}
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./services/ms-nlp/workflows:/workflows:ro
+    networks:
+      - internal
+      - public
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:5678/healthz || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ============================================================ Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    restart: unless-stopped
+    ports:
+      - '3000:80'
+    networks:
+      - public
+    depends_on:
+      - api-gateway
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost/ || exit 1']
+      interval: 30s
+      timeout: 5s
+      retries: 3

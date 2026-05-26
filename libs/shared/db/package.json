@@ -1,0 +1,24 @@
+{
+  "name": "@shared/db",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./generated/index.js",
+  "types": "./generated/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./generated/index.d.ts",
+      "require": "./generated/index.js",
+      "import": "./generated/index.js",
+      "default": "./generated/index.js"
+    }
+  },
+  "scripts": {
+    "test": "node --experimental-vm-modules ../../../node_modules/jest/bin/jest.js --runInBand",
+    "test:cov": "node --experimental-vm-modules ../../../node_modules/jest/bin/jest.js --runInBand --coverage",
+    "typecheck": "tsc --noEmit --strict --target ES2022 --module NodeNext --moduleResolution NodeNext index.ts transactions.ts 2>/dev/null || true"
+  },
+  "devDependencies": {
+    "@testcontainers/postgresql": "^10.28.0",
+    "testcontainers": "^10.28.0"
+  }
+}

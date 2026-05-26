@@ -1,0 +1,33 @@
+# Plantilla multistage para microservicios Node — spec 000 §4.6.
+# Copiar a `services/<name>/Dockerfile` y ajustar SERVICE_NAME al implementar.
+
+# ============================================================ Stage 1: build
+FROM node:20-alpine AS build
+WORKDIR /app
+
+# Copia archivos necesarios para resolver el workspace
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY libs ./libs
+COPY services ./services
+
+RUN corepack enable && pnpm install --frozen-lockfile
+
+# Cambiar SERVICE_PATH al copiar este template
+ARG SERVICE_PATH=services/ms-EJEMPLO
+RUN pnpm --filter "./${SERVICE_PATH}" build
+
+# ============================================================ Stage 2: runtime
+FROM node:20-alpine AS runtime
+RUN addgroup -S app && adduser -S app -G app
+WORKDIR /app
+
+ARG SERVICE_PATH=services/ms-EJEMPLO
+COPY --from=build /app/${SERVICE_PATH}/dist ./dist
+COPY --from=build /app/${SERVICE_PATH}/package.json ./
+COPY --from=build /app/node_modules ./node_modules
+
+USER app
+ENV NODE_ENV=production
+EXPOSE 4000
+
+CMD ["node", "dist/main.js"]

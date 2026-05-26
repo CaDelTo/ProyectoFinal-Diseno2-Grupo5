@@ -1,0 +1,106 @@
+// Schema base — spec 003-base-datos-y-migraciones
+// FK SET NULL en LogTransaccion.persona aplicada por spec 007.
+
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../../libs/shared/db/generated"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+enum EstadoPersona {
+  ACTIVO
+  INACTIVO
+}
+
+enum TipoDocumento {
+  TARJETA_IDENTIDAD
+  CEDULA
+}
+
+enum Genero {
+  MASCULINO
+  FEMENINO
+  NO_BINARIO
+  PREFIERO_NO_REPORTAR
+}
+
+enum TipoTransaccion {
+  CREATE
+  UPDATE
+  DELETE
+  DEACTIVATE
+  QUERY
+  QUERY_NL
+}
+
+model Persona {
+  id_persona       String           @id @default(uuid())
+  nro_documento    String           @unique
+  tipo_documento   TipoDocumento
+  primer_nombre    String           @db.VarChar(30)
+  segundo_nombre   String?          @db.VarChar(30)
+  apellidos        String           @db.VarChar(60)
+  fecha_nacimiento DateTime         @db.Date
+  genero           Genero
+  correo           String
+  celular          String           @db.VarChar(10)
+  foto_url         String?
+  estado           EstadoPersona    @default(ACTIVO)
+  creado_en        DateTime         @default(now())
+  actualizado_en   DateTime         @updatedAt
+  logs             LogTransaccion[]
+
+  @@index([estado])
+  @@map("persona")
+}
+
+model UsuarioSistema {
+  id_usuario        String           @id @default(uuid())
+  proveedor_sso     String
+  identificador_sso String           @unique
+  correo            String           @unique
+  nombre            String
+  rol               String           @default("usuario")
+  ultimo_acceso     DateTime         @updatedAt
+  creado_en         DateTime         @default(now())
+  logs              LogTransaccion[]
+
+  @@map("usuario_sistema")
+}
+
+/// Auditoría. FK a Persona con SET NULL para no bloquear borrado físico (spec 007).
+model LogTransaccion {
+  id_log           String          @id @default(uuid())
+  tipo_transaccion TipoTransaccion
+  nro_documento    String?
+  id_usuario       String?
+  fecha_hora       DateTime        @default(now())
+  ip_origen        String?
+  dispositivo      String?
+  detalle          Json?
+  pregunta_rag     String?
+  respuesta_rag    String?
+  persona          Persona?        @relation(fields: [nro_documento], references: [nro_documento], onDelete: SetNull)
+  usuario          UsuarioSistema? @relation(fields: [id_usuario], references: [id_usuario], onDelete: SetNull)
+
+  @@index([tipo_transaccion])
+  @@index([nro_documento])
+  @@index([fecha_hora])
+  @@map("log_transaccion")
+}
+
+model RagDocIndice {
+  id_indice          String                      @id @default(uuid())
+  fuente             String                      @unique
+  contenido_resumido String
+  embedding          Unsupported("vector(1536)")
+  actualizado_en     DateTime                    @updatedAt
+
+  @@map("rag_doc_indice")
+}

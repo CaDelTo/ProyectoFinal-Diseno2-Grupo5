@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build artifacts
+dist/
+build/
+*.tsbuildinfo
+
+# Test artifacts
+coverage/
+.jest-cache/
+
+# Prisma
+db/prisma/generated/
+libs/shared/db/generated/
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+pnpm-debug.log*
+npm-debug.log*
+
+# Docker
+docker-data/
+
+# n8n workflows runtime (los exportados a JSON sí versionados)
+services/ms-nlp/n8n-data/
+
+# Husky internals (regeneradas con `pnpm prepare`)
+.husky/_/
+
+# Claude Code — settings locales (rutas absolutas, no versionables)
+.claude/settings.local.json
+

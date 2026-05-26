@@ -1,0 +1,7 @@
+node_modules
+dist
+build
+coverage
+**/generated
+pnpm-lock.yaml
+CHANGELOG.md
