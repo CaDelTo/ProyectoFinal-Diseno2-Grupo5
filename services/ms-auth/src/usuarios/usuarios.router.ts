@@ -26,6 +26,9 @@ export interface UsuariosRouterDeps {
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
+/** Límite máximo para la exportación XLSX (sin paginación — spec 011 §4.4). */
+const EXPORT_MAX_ROWS = 10_000;
+
 export function createUsuariosRouter(deps: UsuariosRouterDeps): Router {
   const router = Router();
 
@@ -39,7 +42,7 @@ export function createUsuariosRouter(deps: UsuariosRouterDeps): Router {
     adminGuard,
     async (_req: Request, res: Response, next: NextFunction) => {
       try {
-        const rows = await deps.usuariosRepo.listActivos(10_000, 0); // sin paginación
+        const rows = await deps.usuariosRepo.listActivos(EXPORT_MAX_ROWS, 0);
         const filename = `usuarios-activos-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.xlsx`;
         const buffer = await buildUsuariosXlsx(rows);
         res.setHeader('Content-Type', XLSX_MIME);
