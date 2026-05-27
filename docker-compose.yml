@@ -238,7 +238,7 @@ services:
       timeout: 5s
       retries: 3
 
-  # n8n — ADR 0003. Pipeline RAG completo + chat.
+  # n8n — ADR 0003. Pipeline RAG completo + chat nativo.
   ms-nlp:
     image: n8nio/n8n:latest
     restart: unless-stopped
@@ -246,6 +246,7 @@ services:
       N8N_HOST: ${N8N_HOST:-localhost}
       N8N_PORT: 5678
       N8N_PROTOCOL: http
+      N8N_WEBHOOK_URL: http://localhost:5678/
       DB_TYPE: postgresdb
       DB_POSTGRESDB_HOST: db
       DB_POSTGRESDB_PORT: 5432
@@ -255,6 +256,8 @@ services:
       N8N_OPENAI_KEY: ${N8N_OPENAI_KEY}
       N8N_LOG_WEBHOOK: ${N8N_LOG_WEBHOOK}
       INTERNAL_TOKEN: ${INTERNAL_TOKEN}
+    ports:
+      - '5678:5678'
     volumes:
       - n8n_data:/home/node/.n8n
       - ./services/ms-nlp/workflows:/workflows:ro
