@@ -5,25 +5,29 @@ export interface LogEntry {
   fecha_hora: string;
   tipo_transaccion: string;
   nro_documento: string | null;
-  id_usuario: string;
-  ip_origen: string;
-  detalle: string | null;
+  id_usuario: string | null;
+  ip_origen: string | null;
+  detalle: unknown;
+}
+
+export interface LogsMeta {
+  total: number;
+  limit: number;
+  offset: number;
 }
 
 export interface LogsResponse {
   data: LogEntry[];
-  total: number;
-  page: number;
-  pageSize: number;
+  meta: LogsMeta;
 }
 
 export interface LogsQuery {
-  page?: number;
-  pageSize?: number;
+  limit?: number;
+  offset?: number;
   tipo?: string;
-  nro_documento?: string;
-  fecha_desde?: string;
-  fecha_hasta?: string;
+  documento?: string;
+  desde?: string;
+  hasta?: string;
 }
 
 export async function getLogs(query: LogsQuery = {}): Promise<LogsResponse> {

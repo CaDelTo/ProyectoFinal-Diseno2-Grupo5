@@ -36,6 +36,19 @@ export async function findUsuarioById(
 }
 
 /**
+ * Busca un usuario por su identificador_sso (= sub del id_token de Entra ID = X-User-Id del gateway).
+ * Usada en GET /me para resolver el usuario a partir del header propagado por el gateway.
+ */
+export async function findUsuarioBySsoId(
+  prisma: PrismaClient,
+  identificadorSso: string,
+): Promise<UsuarioSistema | null> {
+  return prisma.usuarioSistema.findUnique({
+    where: { identificador_sso: identificadorSso },
+  });
+}
+
+/**
  * Busca el rol de un usuario por su identificador_sso (= X-User-Id propagado por el Gateway).
  * Retorna el rol ("usuario" | "admin") o null si no existe.
  */

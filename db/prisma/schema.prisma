@@ -5,6 +5,7 @@ generator client {
   provider        = "prisma-client-js"
   output          = "../../libs/shared/db/generated"
   previewFeatures = ["postgresqlExtensions"]
+  binaryTargets   = ["native", "linux-musl-arm64-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -61,25 +62,28 @@ model Persona {
 }
 
 model UsuarioSistema {
-  id_usuario        String           @id @default(uuid())
+  id_usuario        String   @id @default(uuid())
   proveedor_sso     String
-  identificador_sso String           @unique
-  correo            String           @unique
+  identificador_sso String   @unique
+  correo            String   @unique
   nombre            String
-  rol               String           @default("usuario")
-  ultimo_acceso     DateTime         @updatedAt
-  creado_en         DateTime         @default(now())
-  logs              LogTransaccion[]
+  rol               String   @default("usuario")
+  ultimo_acceso     DateTime @updatedAt
+  creado_en         DateTime @default(now())
 
   @@map("usuario_sistema")
 }
 
-/// Auditoría. FK a Persona con SET NULL para no bloquear borrado físico (spec 007).
+/// Auditoría.
+/// id_usuario almacena el identificador_sso del gateway (payload.sub del id_token),
+/// NO el id_usuario interno — sin FK para no bloquear borrado y para mantener consistencia
+/// con el header X-User-Id que propaga el gateway.
+/// FK a Persona con SET NULL para no bloquear borrado físico (spec 007).
 model LogTransaccion {
   id_log           String          @id @default(uuid())
   tipo_transaccion TipoTransaccion
   nro_documento    String?
-  id_usuario       String?
+  id_usuario       String?         // identificador_sso — sin FK intencional
   fecha_hora       DateTime        @default(now())
   ip_origen        String?
   dispositivo      String?
@@ -87,7 +91,6 @@ model LogTransaccion {
   pregunta_rag     String?
   respuesta_rag    String?
   persona          Persona?        @relation(fields: [nro_documento], references: [nro_documento], onDelete: SetNull)
-  usuario          UsuarioSistema? @relation(fields: [id_usuario], references: [id_usuario], onDelete: SetNull)
 
   @@index([tipo_transaccion])
   @@index([nro_documento])

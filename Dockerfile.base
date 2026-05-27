@@ -1,0 +1,39 @@
+# Imagen base compartida — instalación única de dependencias para todos los microservicios
+# Construir con: docker build -t datospersonales-base:latest -f Dockerfile.base .
+# Ver scripts/docker-build.sh
+
+FROM node:20-alpine
+RUN apk add --no-cache openssl
+WORKDIR /app
+
+# Workspace root
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.base.json ./
+
+# Shared libs (solo package.json primero para cache de pnpm install)
+COPY libs/shared/db/package.json       libs/shared/db/package.json
+COPY libs/shared/logger/package.json   libs/shared/logger/package.json
+COPY libs/shared/errors/package.json   libs/shared/errors/package.json
+COPY libs/shared/validators/package.json libs/shared/validators/package.json
+COPY libs/shared/health/package.json   libs/shared/health/package.json
+
+# Package.json de cada servicio (necesario para que pnpm resuelva workspaces)
+COPY services/api-gateway/package.json services/api-gateway/package.json
+COPY services/ms-auth/package.json     services/ms-auth/package.json
+COPY services/ms-crear/package.json    services/ms-crear/package.json
+COPY services/ms-modificar/package.json services/ms-modificar/package.json
+COPY services/ms-borrar/package.json   services/ms-borrar/package.json
+COPY services/ms-consultar/package.json services/ms-consultar/package.json
+COPY services/ms-log/package.json      services/ms-log/package.json
+
+# Un único pnpm install para toda la workspace (~5-7 min, pero solo una vez)
+RUN corepack enable && pnpm install --frozen-lockfile
+
+# Copiar fuentes de libs y schema de prisma
+COPY libs ./libs
+COPY db   ./db
+
+# Generar cliente Prisma para Linux Alpine
+RUN npx prisma generate --schema=./db/prisma/schema.prisma
+
+# Compilar todas las libs compartidas a dist/
+RUN pnpm -r --filter '@shared/*' run build

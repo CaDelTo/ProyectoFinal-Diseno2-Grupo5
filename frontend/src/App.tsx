@@ -7,6 +7,7 @@ import { ModificarPersonaPage } from '@/pages/ModificarPersonaPage';
 import { BorrarPersonaPage } from '@/pages/BorrarPersonaPage';
 import { ConsultarPersonaPage } from '@/pages/ConsultarPersonaPage';
 import { LogsPage } from '@/pages/LogsPage';
+import { ConsultaNLPage } from '@/pages/ConsultaNLPage';
 
 export function App() {
   return (
@@ -50,6 +51,14 @@ export function App() {
           element={
             <AuthGuard>
               <LogsPage />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="/consulta-nl"
+          element={
+            <AuthGuard>
+              <ConsultaNLPage />
             </AuthGuard>
           }
         />

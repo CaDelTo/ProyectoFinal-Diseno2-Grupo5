@@ -283,7 +283,7 @@ services:
     depends_on:
       - api-gateway
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://localhost/ || exit 1']
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1/health || exit 1']
       interval: 30s
       timeout: 5s
       retries: 3

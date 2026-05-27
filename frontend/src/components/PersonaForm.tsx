@@ -34,6 +34,12 @@ interface PersonaFormProps {
   isLoading?: boolean;
 }
 
+const inputClass =
+  'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder-gray-400 ' +
+  'focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:bg-gray-50 disabled:text-gray-500';
+const labelClass = 'block text-sm font-medium text-gray-700 mb-1';
+const errorClass = 'mt-1 text-xs text-red-600';
+
 export function PersonaForm({ mode, defaultValues, serverErrors, onSubmit, isLoading }: PersonaFormProps) {
   const {
     register,
@@ -44,80 +50,159 @@ export function PersonaForm({ mode, defaultValues, serverErrors, onSubmit, isLoa
     defaultValues,
   });
 
-  const submitLabel = mode === 'crear' ? 'Crear' : 'Guardar';
+  const submitLabel = mode === 'crear' ? 'Crear persona' : 'Guardar cambios';
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate>
-      <div>
-        <label htmlFor="tipo_documento">Tipo de documento</label>
-        <select id="tipo_documento" {...register('tipo_documento')}>
-          <option value="">Selecciona...</option>
-          <option value="CEDULA">Cédula</option>
-          <option value="PASAPORTE">Pasaporte</option>
-          <option value="TARJETA_IDENTIDAD">Tarjeta de identidad</option>
-        </select>
-        {errors.tipo_documento && <span>{errors.tipo_documento.message}</span>}
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+      {/* Fila 1: Tipo + Número de documento */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div>
+          <label htmlFor="tipo_documento" className={labelClass}>
+            Tipo de documento
+          </label>
+          <select id="tipo_documento" {...register('tipo_documento')} className={inputClass}>
+            <option value="">Selecciona...</option>
+            <option value="CEDULA">Cédula</option>
+            <option value="PASAPORTE">Pasaporte</option>
+            <option value="TARJETA_IDENTIDAD">Tarjeta de identidad</option>
+          </select>
+          {errors.tipo_documento && <p className={errorClass}>{errors.tipo_documento.message}</p>}
+        </div>
+
+        <div>
+          <label htmlFor="nro_documento" className={labelClass}>
+            Número de documento
+          </label>
+          <input
+            id="nro_documento"
+            type="text"
+            inputMode="numeric"
+            {...register('nro_documento')}
+            className={inputClass}
+            placeholder="1234567890"
+          />
+          {errors.nro_documento && <p className={errorClass}>{errors.nro_documento.message}</p>}
+        </div>
       </div>
 
-      <div>
-        <label htmlFor="nro_documento">Número de documento</label>
-        <input id="nro_documento" type="text" {...register('nro_documento')} />
-        {errors.nro_documento && <span>{errors.nro_documento.message}</span>}
+      {/* Fila 2: Nombre + Apellidos */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div>
+          <label htmlFor="primer_nombre" className={labelClass}>
+            Primer nombre
+          </label>
+          <input
+            id="primer_nombre"
+            type="text"
+            {...register('primer_nombre')}
+            className={inputClass}
+            placeholder="Juan"
+          />
+          {errors.primer_nombre && <p className={errorClass}>{errors.primer_nombre.message}</p>}
+        </div>
+
+        <div>
+          <label htmlFor="apellidos" className={labelClass}>
+            Apellidos
+          </label>
+          <input
+            id="apellidos"
+            type="text"
+            {...register('apellidos')}
+            className={inputClass}
+            placeholder="García López"
+          />
+          {errors.apellidos && <p className={errorClass}>{errors.apellidos.message}</p>}
+        </div>
       </div>
 
-      <div>
-        <label htmlFor="primer_nombre">Primer nombre</label>
-        <input id="primer_nombre" type="text" {...register('primer_nombre')} />
-        {errors.primer_nombre && <span>{errors.primer_nombre.message}</span>}
+      {/* Fila 3: Correo + Celular */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div>
+          <label htmlFor="correo" className={labelClass}>
+            Correo electrónico
+          </label>
+          <input
+            id="correo"
+            type="email"
+            {...register('correo')}
+            className={inputClass}
+            placeholder="juan@uninorte.edu.co"
+          />
+          {errors.correo && <p className={errorClass}>{errors.correo.message}</p>}
+        </div>
+
+        <div>
+          <label htmlFor="celular" className={labelClass}>
+            Celular
+          </label>
+          <input
+            id="celular"
+            type="text"
+            inputMode="numeric"
+            {...register('celular')}
+            className={inputClass}
+            placeholder="3001234567"
+          />
+          {errors.celular && <p className={errorClass}>{errors.celular.message}</p>}
+        </div>
       </div>
 
-      <div>
-        <label htmlFor="apellidos">Apellidos</label>
-        <input id="apellidos" type="text" {...register('apellidos')} />
-        {errors.apellidos && <span>{errors.apellidos.message}</span>}
+      {/* Fila 4: Fecha nacimiento + Género */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div>
+          <label htmlFor="fecha_nacimiento" className={labelClass}>
+            Fecha de nacimiento
+          </label>
+          <input
+            id="fecha_nacimiento"
+            type="date"
+            {...register('fecha_nacimiento')}
+            className={inputClass}
+          />
+          {errors.fecha_nacimiento && <p className={errorClass}>{errors.fecha_nacimiento.message}</p>}
+        </div>
+
+        <div>
+          <label htmlFor="genero" className={labelClass}>
+            Género
+          </label>
+          <select id="genero" {...register('genero')} className={inputClass}>
+            <option value="">Selecciona...</option>
+            <option value="MASCULINO">Masculino</option>
+            <option value="FEMENINO">Femenino</option>
+            <option value="OTRO">Otro</option>
+          </select>
+          {errors.genero && <p className={errorClass}>{errors.genero.message}</p>}
+        </div>
       </div>
 
-      <div>
-        <label htmlFor="correo">Correo electrónico</label>
-        <input id="correo" type="email" {...register('correo')} />
-        {errors.correo && <span>{errors.correo.message}</span>}
-      </div>
-
-      <div>
-        <label htmlFor="celular">Celular</label>
-        <input id="celular" type="text" {...register('celular')} />
-        {errors.celular && <span>{errors.celular.message}</span>}
-      </div>
-
-      <div>
-        <label htmlFor="fecha_nacimiento">Fecha de nacimiento</label>
-        <input id="fecha_nacimiento" type="text" placeholder="dd-mmm-yyyy" {...register('fecha_nacimiento')} />
-        {errors.fecha_nacimiento && <span>{errors.fecha_nacimiento.message}</span>}
-      </div>
-
-      <div>
-        <label htmlFor="genero">Género</label>
-        <select id="genero" {...register('genero')}>
-          <option value="">Selecciona...</option>
-          <option value="MASCULINO">Masculino</option>
-          <option value="FEMENINO">Femenino</option>
-          <option value="OTRO">Otro</option>
-        </select>
-        {errors.genero && <span>{errors.genero.message}</span>}
-      </div>
-
-      {/* Render all server errors not tied to a specific field */}
+      {/* Errores de servidor no asociados a campos */}
       {serverErrors && serverErrors.length > 0 && (
-        <ul>
+        <ul className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 space-y-1">
           {serverErrors.map((e, i) => (
-            <li key={i}>{e.mensaje}</li>
+            <li key={i} className="text-sm text-red-700">
+              {e.mensaje}
+            </li>
           ))}
         </ul>
       )}
 
-      <button type="submit" disabled={isLoading}>
-        {submitLabel}
-      </button>
+      <div className="pt-2">
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="inline-flex items-center gap-2 bg-brand hover:bg-brand-light active:bg-brand-dark text-white font-medium px-6 py-2.5 rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading && (
+            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+          )}
+          {submitLabel}
+        </button>
+      </div>
     </form>
   );
 }

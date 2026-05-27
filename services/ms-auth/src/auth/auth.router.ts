@@ -96,7 +96,10 @@ export function createAuthRouter(deps: RouterDeps): Router {
       });
 
       deps.log.info({ id_usuario: usuario.id_usuario, event: 'auth.login.ok' });
-      res.redirect(302, `${deps.frontendUrl}/#access_token=${tokens.access_token}`);
+      // Usamos id_token en lugar de access_token:
+      //   - id_token.aud = AZURE_CLIENT_ID  → el gateway puede validarlo con su JWKS
+      //   - id_token.sub = identificador_sso → coincide con lo almacenado en BD
+      res.redirect(302, `${deps.frontendUrl}/#access_token=${tokens.id_token}`);
     } catch (err) {
       if (err instanceof Error && err.message.startsWith('entra-exchange-failed')) {
         const pd = buildProblemDetails({ type: 'entra-exchange-failed', detail: err.message });

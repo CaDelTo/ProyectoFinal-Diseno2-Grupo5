@@ -1,28 +1,17 @@
-# ms-crear — spec 004
+# ms-crear
 # =================================================================== Stage 1: build
-FROM node:20-alpine AS build
-WORKDIR /app
-
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
-COPY libs ./libs
+FROM datospersonales-base:latest AS build
 COPY services/ms-crear ./services/ms-crear
-
-RUN corepack enable && pnpm install --frozen-lockfile
 RUN pnpm --filter ms-crear run build
+RUN pnpm deploy --filter ms-crear --prod --legacy /deploy
 
 # =================================================================== Stage 2: runtime
 FROM node:20-alpine AS runtime
-RUN addgroup -S app && adduser -S app -G app
+RUN apk add --no-cache openssl curl && addgroup -S app && adduser -S app -G app
 WORKDIR /app
-
-COPY --from=build /app/services/ms-crear/dist ./dist
-COPY --from=build /app/services/ms-crear/package.json ./
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/libs/shared/db/generated ./libs/shared/db/generated
-
+COPY --from=build /deploy .
 USER app
 ENV NODE_ENV=production
-ENV PORT=4003
-EXPOSE 4003
-
+ENV PORT=4001
+EXPOSE 4001
 CMD ["node", "dist/main.js"]

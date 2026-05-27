@@ -4,7 +4,7 @@ import { createEntraClient } from './auth/entra.client.js';
 import * as pkceModule from './auth/pkce.js';
 import {
   upsertUsuario,
-  findUsuarioById,
+  findUsuarioBySsoId,
   findRolByIdentificadorSso,
   listUsuariosActivos,
   countUsuariosActivos,
@@ -37,7 +37,8 @@ const app = createApp({
   entra,
   repo: {
     upsert: (input) => upsertUsuario(prisma, input),
-    findById: (id) => findUsuarioById(prisma, id),
+    // X-User-Id del gateway = sub del id_token = identificador_sso en BD
+    findById: (ssoId) => findUsuarioBySsoId(prisma, ssoId),
   },
   frontendUrl: process.env['FRONTEND_URL'] ?? 'http://localhost:3000',
   usuariosRepo: {

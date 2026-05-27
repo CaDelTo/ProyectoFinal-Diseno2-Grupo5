@@ -31,6 +31,25 @@ export interface PresignedUrlResponse {
   objectKey: string;
 }
 
+export interface PersonasQuery {
+  limit?: number;
+  offset?: number;
+  activos?: 'true' | 'false' | 'all';
+}
+
+export interface PersonasResponse {
+  data: Persona[];
+  meta: { total: number; limit: number; offset: number };
+}
+
+export async function getPersonas(query: PersonasQuery = {}): Promise<PersonasResponse> {
+  const params = new URLSearchParams();
+  if (query.limit !== undefined) params.set('limit', String(query.limit));
+  if (query.offset !== undefined) params.set('offset', String(query.offset));
+  if (query.activos !== undefined) params.set('activos', query.activos);
+  return apiClient.get(`personas?${params.toString()}`).json<PersonasResponse>();
+}
+
 export async function getPersona(doc: string): Promise<Persona> {
   return apiClient.get(`personas/${doc}`).json<Persona>();
 }

@@ -20,6 +20,17 @@ export function AuthProvider({ children, initialToken }: AuthProviderProps) {
       sessionStorage.setItem('access_token', initialToken);
       return initialToken;
     }
+
+    // El callback de OAuth2 entrega el token en el hash (#access_token=...)
+    const hash = window.location.hash;
+    if (hash.startsWith('#access_token=')) {
+      const t = decodeURIComponent(hash.slice('#access_token='.length));
+      sessionStorage.setItem('access_token', t);
+      // Limpia el hash para que no quede expuesto en la barra de dirección
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      return t;
+    }
+
     return sessionStorage.getItem('access_token');
   });
 
