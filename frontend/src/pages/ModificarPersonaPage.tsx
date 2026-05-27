@@ -3,18 +3,15 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { PersonaForm } from '@/components/PersonaForm';
 import { getPersona, modificarPersona, type Persona } from '@/api/personas';
 import { ProblemDetailsToast } from '@/components/ProblemDetailsToast';
+import { extractProblemDetails, type ProblemDetails, type FieldError } from '@/lib/api-error';
 import type { HTTPError } from 'ky';
-
-interface FieldError {
-  campo: string;
-  mensaje: string;
-}
 
 export function ModificarPersonaPage() {
   const [docSearch, setDocSearch] = useState('');
   const [docToFetch, setDocToFetch] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [conflict, setConflict] = useState(false);
+  const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [serverErrors, setServerErrors] = useState<FieldError[]>([]);
 
   const { data: persona } = useQuery({
@@ -29,24 +26,19 @@ export function ModificarPersonaPage() {
     onSuccess: () => {
       setSuccess(true);
       setConflict(false);
+      setProblem(null);
       setServerErrors([]);
     },
     onError: async (err: unknown) => {
       setSuccess(false);
       const httpErr = err as HTTPError;
-      if (httpErr?.response) {
-        const status = httpErr.response.status;
-        if (status === 412) {
-          setConflict(true);
-          return;
-        }
-        try {
-          const body = await httpErr.response.json();
-          if (body.errors) setServerErrors(body.errors);
-        } catch {
-          // ignore
-        }
+      if (httpErr?.response?.status === 412) {
+        setConflict(true);
+        return;
       }
+      const { problem: p, fieldErrors } = await extractProblemDetails(err);
+      setProblem(p);
+      setServerErrors(fieldErrors);
     },
   });
 
@@ -57,6 +49,7 @@ export function ModificarPersonaPage() {
       setDocToFetch(doc);
       setSuccess(false);
       setConflict(false);
+      setProblem(null);
       setServerErrors([]);
     }
   };
@@ -78,6 +71,7 @@ export function ModificarPersonaPage() {
 
       {conflict && <p>Datos cambiados por otro usuario, por favor recargar</p>}
       {success && <p>Guardado exitosamente</p>}
+      {problem && <ProblemDetailsToast problem={problem} />}
 
       {persona && (
         <PersonaForm
@@ -98,6 +92,7 @@ export function ModificarPersonaPage() {
           onSubmit={(data) => {
             setSuccess(false);
             setConflict(false);
+            setProblem(null);
             mutation.mutate(data);
           }}
         />
