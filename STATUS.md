@@ -12,7 +12,7 @@
 
 Proyecto: **Sistema de Gestión de Datos Personales** — Universidad del Norte, Diseño de Software II, 2026.
 
-Fase actual: **GATEWAY + 6 MICROSERVICIOS IMPLEMENTADOS**.
+Fase actual: **BACKEND COMPLETO · FRONTEND PENDIENTE**.
 
 - ✅ 12/12 ADRs aceptadas · 🟡 2 ADRs nuevas (0013 accepted · 0014 proposed).
 - ✅ 13/13 specs aprobadas (000–012).
@@ -81,7 +81,7 @@ Fase actual: **GATEWAY + 6 MICROSERVICIOS IMPLEMENTADOS**.
 | Servicio | Dockerfile | Código | Tests verde | En compose | Healthcheck |
 |---|---|---|---|---|---|
 | frontend | 🟡 placeholder | — | — | ✓ | ✓ |
-| api-gateway | ✅ Nginx+Node multi-stage | ✅ JWT validate + routing | ✅ 26 tests | ✓ | ✓ |
+| api-gateway | ✅ Nginx+Node multi-stage | ✅ JWT validate + routing | ✅ 37 tests | ✓ | ✓ |
 | ms-auth | ✅ multi-stage | ✅ Express + PKCE + admin report | ✅ 66 tests | ✓ | ✓ |
 | ms-crear | ✅ multi-stage | ✅ Express + AWS S3 SDK | ✅ 43 tests | ✓ | ✓ |
 | ms-modificar | ✅ multi-stage | ✅ Express + optimistic lock | ✅ 28 tests | ✓ | ✓ |
@@ -108,7 +108,7 @@ _ninguno_
 
 - **UI lib** (Mantine vs shadcn) → spec 010 §9. Decidir al iniciar implementación del frontend.
 - **Dimensión vector** (1536 OpenAI vs 768 Ollama) → spec 003 §9 + spec 009 §4.7. Decidir al elegir LLM por defecto. Actualmente schema `vector(1536)`.
-- **Hook `pre-commit`** con lint+test: deferido a cuando haya código de servicios.
+- **Hook `pre-commit`** con lint+test: todos los servicios tienen código — listo para activar.
 - **ADR 0014** — umbrales de rendimiento: **proposed**, pendiente de aprobación del equipo.
 - **Spec 010** — **approved**: pendiente de implementar (Frontend React — último paso).
 
@@ -118,10 +118,10 @@ _ninguno_
 
 | Nivel | Estado |
 |---|---|
-| N1 Unit tests | 🟢 parcial (libs/shared) |
-| N2 Lint + typecheck | 🟢 limpio (libs/shared) |
-| N3 Coverage ≥ 80 % | 🟢 100 % en libs/shared |
-| N4 Smoke HTTP | ⏳ sin servicios |
+| N1 Unit tests | 🟢 completo (libs/shared + 8 microservicios) |
+| N2 Lint + typecheck | 🟢 limpio (libs/shared + todos los servicios) |
+| N3 Coverage ≥ 80 % | 🟢 ≥ 80 % branches en todos los servicios implementados |
+| N4 Smoke HTTP | 🟢 cubierto via supertest (unit/integration) · ⏳ E2E real requiere docker compose |
 | N5 E2E con BD real | 🟢 18 tests contra Postgres real (testcontainers) |
 | N6 Verificación manual UI | ⏳ sin frontend |
 | N7 Migración aplicada + reversible | 🟢 schema aplicado vía `prisma db push` en CI (testcontainers) |
