@@ -6,6 +6,8 @@ interface LogEntry {
   id_usuario: string | null;
   ip_origen: string | null;
   detalle: unknown;
+  pregunta_rag: string | null;
+  respuesta_rag: string | null;
 }
 
 interface LogTableProps {
@@ -18,10 +20,12 @@ interface LogTableProps {
 }
 
 const txColors: Record<string, string> = {
-  CREATE: 'bg-green-100 text-green-800',
-  UPDATE: 'bg-blue-100 text-blue-800',
-  DELETE: 'bg-red-100 text-red-800',
-  READ:   'bg-gray-100 text-gray-700',
+  CREATE:     'bg-green-100 text-green-800',
+  UPDATE:     'bg-blue-100 text-blue-800',
+  DELETE:     'bg-red-100 text-red-800',
+  DEACTIVATE: 'bg-orange-100 text-orange-800',
+  QUERY:      'bg-gray-100 text-gray-700',
+  QUERY_NL:   'bg-purple-100 text-purple-800',
 };
 
 export function LogTable({ logs, total, page, pageSize, onPageChange, onExport }: LogTableProps) {
@@ -104,9 +108,15 @@ export function LogTable({ logs, total, page, pageSize, onPageChange, onExport }
                     {log.ip_origen ?? '—'}
                   </td>
                   <td className="px-4 py-3 text-gray-500 max-w-xs truncate" title={
-                    log.detalle != null ? JSON.stringify(log.detalle) : ''
+                    log.tipo_transaccion === 'QUERY_NL' && log.pregunta_rag
+                      ? log.pregunta_rag
+                      : log.detalle != null ? JSON.stringify(log.detalle) : ''
                   }>
-                    {log.detalle != null ? JSON.stringify(log.detalle) : '—'}
+                    {log.tipo_transaccion === 'QUERY_NL' && log.pregunta_rag ? (
+                      <span className="italic text-purple-700">{log.pregunta_rag}</span>
+                    ) : log.detalle != null ? (
+                      JSON.stringify(log.detalle)
+                    ) : '—'}
                   </td>
                 </tr>
               ))

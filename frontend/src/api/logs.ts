@@ -8,6 +8,8 @@ export interface LogEntry {
   id_usuario: string | null;
   ip_origen: string | null;
   detalle: unknown;
+  pregunta_rag: string | null;
+  respuesta_rag: string | null;
 }
 
 export interface LogsMeta {

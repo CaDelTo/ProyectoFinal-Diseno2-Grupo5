@@ -13,6 +13,8 @@ const mockLogs = Array.from({ length: 25 }, (_, i) => ({
   id_usuario: 'user-1',
   ip_origen: '127.0.0.1',
   detalle: null,
+  pregunta_rag: null,
+  respuesta_rag: null,
 }));
 
 function renderTable(overrides = {}) {
