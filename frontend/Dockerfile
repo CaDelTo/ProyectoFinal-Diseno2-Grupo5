@@ -1,16 +1,32 @@
-# Dockerfile placeholder usado temporalmente por servicios sin implementar.
-# Levanta un servidor mínimo respondiendo /health hasta que el servicio real exista.
-# REEMPLAZAR al implementar cada servicio (ver Dockerfile.node-template).
+# ── Stage 1: build ──────────────────────────────────────────────────────────
+FROM node:20-alpine AS builder
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
-FROM node:20-alpine
-RUN addgroup -S app && adduser -S app -G app
-USER app
-WORKDIR /home/app
+WORKDIR /app
 
-# Inline server tiny — /health responde 200; cualquier otra ruta 503.
-ARG PORT=80
-ENV PORT=${PORT}
-EXPOSE ${PORT}
+# Instala dependencias del workspace raíz (necesario para @shared/*)
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY libs/ libs/
+COPY frontend/package.json ./frontend/package.json
 
-# C-01 (spec 012): security headers presentes incluso en el placeholder
-CMD ["node", "-e", "const http=require('http');const port=process.env.PORT||4000;const SEC={'Content-Security-Policy':\"default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'\",'X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY'};http.createServer((req,res)=>{if(req.url==='/health'){res.writeHead(200,{...SEC,'Content-Type':'application/json'});res.end(JSON.stringify({status:'ok',placeholder:true}))}else{res.writeHead(503,{...SEC,'Content-Type':'application/json'});res.end(JSON.stringify({error:'not implemented yet'}))}}).listen(port,()=>console.log('placeholder listening on '+port))"]
+RUN pnpm install --frozen-lockfile
+
+# Copia fuentes del frontend y construye
+COPY frontend/ ./frontend/
+
+RUN pnpm --filter frontend build
+
+# ── Stage 2: serve ───────────────────────────────────────────────────────────
+FROM nginx:1.27-alpine AS runtime
+
+# Elimina config default de nginx
+RUN rm /etc/nginx/conf.d/default.conf
+
+COPY frontend/nginx.conf /etc/nginx/conf.d/frontend.conf
+
+# Artefactos de Vite
+COPY --from=builder /app/frontend/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
