@@ -1,10 +1,10 @@
 ---
 id: 010
 title: Frontend React — Menú principal + formularios
-status: approved
+status: implemented
 owner: equipo
 created: 2026-05-24
-updated: 2026-05-24
+updated: 2026-05-26
 ---
 
 # 010 — Frontend React — Menú principal + formularios

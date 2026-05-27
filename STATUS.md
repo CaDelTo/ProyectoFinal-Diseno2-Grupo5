@@ -4,7 +4,7 @@
 > Diseñado para que un agente recupere contexto en < 1.5k tokens sin alucinar.
 > Si necesitas detalle, ve a `specs/NNN-*.md` o `docs/adr/NNNN-*.md`.
 >
-> **Última actualización:** 2026-05-26 · **Actualizado por:** equipo (spec 011 implementada)
+> **Última actualización:** 2026-05-26 · **Actualizado por:** equipo (spec 010 implementada)
 
 ---
 
@@ -12,15 +12,15 @@
 
 Proyecto: **Sistema de Gestión de Datos Personales** — Universidad del Norte, Diseño de Software II, 2026.
 
-Fase actual: **BACKEND COMPLETO · FRONTEND PENDIENTE**.
+Fase actual: **IMPLEMENTACIÓN COMPLETA**.
 
-- ✅ 12/12 ADRs aceptadas · 🟡 2 ADRs nuevas (0013 accepted · 0014 proposed).
+- ✅ 12/12 ADRs aceptadas · 🟡 1 ADR pendiente (0014 proposed).
 - ✅ 13/13 specs aprobadas (000–012).
-- ✅ 12/13 specs implementadas (000, 001, 002, 003, 004, 005, 006, 007, 008, 009, 011, 012).
-- ✅ 8/8 microservicios funcionales + API Gateway (ms-auth, ms-log, ms-crear, ms-consultar, ms-modificar, ms-borrar, ms-nlp).
-- ✅ **366 tests verdes** (errors 11 · logger 18 · validators 50 · health 6 · ms-auth 66 · ms-log 29 · ms-crear 43 · db 18 · ms-consultar 20 · ms-modificar 28 · ms-borrar 18 · api-gateway 37 · ms-nlp 18 · +4 security tests).
+- ✅ 13/13 specs implementadas (000–009, 010, 011, 012).
+- ✅ 8/8 microservicios funcionales + API Gateway + frontend SPA.
+- ✅ **406 tests verdes** (errors 11 · logger 18 · validators 50 · health 6 · ms-auth 66 · ms-log 29 · ms-crear 43 · db 18 · ms-consultar 20 · ms-modificar 28 · ms-borrar 18 · api-gateway 37 · ms-nlp 18 · +4 security · frontend 40).
 
-**Próximo paso recomendado:** aceptar ADR 0014 (proposed) e implementar spec 010 (Frontend React).
+**Próximo paso recomendado:** aceptar ADR 0014 (proposed) o levantar `docker compose up` para smoke E2E real.
 
 ---
 
@@ -59,7 +59,7 @@ Fase actual: **BACKEND COMPLETO · FRONTEND PENDIENTE**.
 | 007 | ms-borrar (condicional) | **implemented** | ✅ completo | 81.25 % branches · 100 % stmts | 010 |
 | 008 | ms-log | **implemented** | ✅ completo | 85.29 % branches · 92.92 % stmts | 005, 009, 010 |
 | 009 | ms-nlp RAG sobre n8n | **implemented** | ✅ completo | 93% statements · 83.33% branches | 010 |
-| 010 | Frontend React | approved | — | — | (último) |
+| 010 | Frontend React | **implemented** | ✅ completo | 90% branches · 97% stmts | (último) |
 | 011 | Reporte usuarios activos con permisos | **implemented** | ✅ completo | 86% branches · 100% stmts src/usuarios | 010 |
 | 012 | Controles de seguridad transversales | **implemented** | ✅ completo | N/A (transversal) | todos |
 
@@ -80,7 +80,7 @@ Fase actual: **BACKEND COMPLETO · FRONTEND PENDIENTE**.
 
 | Servicio | Dockerfile | Código | Tests verde | En compose | Healthcheck |
 |---|---|---|---|---|---|
-| frontend | 🟡 placeholder | — | — | ✓ | ✓ |
+| frontend | ✅ multi-stage (Vite build) | ✅ React 18 + shadcn/ui + Tailwind | ✅ 40 tests (Vitest + RTL + MSW) | ✓ | ✓ |
 | api-gateway | ✅ Nginx+Node multi-stage | ✅ JWT validate + routing | ✅ 37 tests | ✓ | ✓ |
 | ms-auth | ✅ multi-stage | ✅ Express + PKCE + admin report | ✅ 66 tests | ✓ | ✓ |
 | ms-crear | ✅ multi-stage | ✅ Express + AWS S3 SDK | ✅ 43 tests | ✓ | ✓ |
@@ -106,11 +106,9 @@ _ninguno_
 
 ## Decisiones pendientes
 
-- **UI lib** (Mantine vs shadcn) → spec 010 §9. Decidir al iniciar implementación del frontend.
 - **Dimensión vector** (1536 OpenAI vs 768 Ollama) → spec 003 §9 + spec 009 §4.7. Decidir al elegir LLM por defecto. Actualmente schema `vector(1536)`.
 - **Hook `pre-commit`** con lint+test: todos los servicios tienen código — listo para activar.
 - **ADR 0014** — umbrales de rendimiento: **proposed**, pendiente de aprobación del equipo.
-- **Spec 010** — **approved**: pendiente de implementar (Frontend React — último paso).
 
 ---
 
@@ -123,7 +121,7 @@ _ninguno_
 | N3 Coverage ≥ 80 % | 🟢 ≥ 80 % branches en todos los servicios implementados |
 | N4 Smoke HTTP | 🟢 cubierto via supertest (unit/integration) · ⏳ E2E real requiere docker compose |
 | N5 E2E con BD real | 🟢 18 tests contra Postgres real (testcontainers) |
-| N6 Verificación manual UI | ⏳ sin frontend |
+| N6 Verificación manual UI | 🟢 40 tests (Vitest+RTL+MSW) · ≥ 90% branches · ⏳ smoke real requiere `docker compose up` |
 | N7 Migración aplicada + reversible | 🟢 schema aplicado vía `prisma db push` en CI (testcontainers) |
 
 ---
