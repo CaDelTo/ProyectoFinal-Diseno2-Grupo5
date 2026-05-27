@@ -49,7 +49,7 @@ Fase actual: **IMPLEMENTACIÓN COMPLETA**.
 
 | # | Spec | Status | Impl | Cobertura | Bloquea a |
 |---|---|---|---|---|---|
-| 000 | Arquitectura general | approved | 🟡 parcial (contratos + scaffold) | libs/shared 100 % | todos |
+| 000 | Arquitectura general | **implemented** | ✅ completo | libs/shared 100 % | todos |
 | 001 | Auth SSO (ms-auth) | **implemented** | ✅ completo | 82.85 % branches · 99.2 % stmts | 002, 010 |
 | 002 | API Gateway | **implemented** | ✅ completo | 87.5 % branches · 100 % stmts | 004–009 (runtime) |
 | 003 | BD + Prisma + migraciones | **implemented** | ✅ completo | 100% cobertura index.ts + transactions.ts · 18 tests DB real | 001, 004–009 |

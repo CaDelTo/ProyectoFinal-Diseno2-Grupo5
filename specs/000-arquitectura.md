@@ -1,10 +1,10 @@
 ---
 id: 000
 title: Arquitectura general del sistema
-status: approved
+status: implemented
 owner: equipo
 created: 2026-05-24
-updated: 2026-05-24
+updated: 2026-05-26
 ---
 
 # 000 — Arquitectura general del sistema
