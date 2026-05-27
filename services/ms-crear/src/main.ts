@@ -34,7 +34,7 @@ const app = createApp({
   buildFotoUrl,
 });
 
-const PORT = Number(process.env['PORT'] ?? 4003);
+const PORT = Number(process.env['PORT'] ?? 4001);
 
 const server = app.listen(PORT, () => {
   logger.info({ event: 'server.start', port: PORT });
