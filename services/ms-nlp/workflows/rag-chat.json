@@ -60,7 +60,7 @@
         300
       ],
       "parameters": {
-        "query": "SELECT fuente, contenido_resumido FROM rag_doc_indice ORDER BY embedding <-> $1::vector LIMIT 5",
+        "query": "SELECT fuente, contenido_resumido FROM rag_doc_indice ORDER BY embedding <-> $1::vector LIMIT 50",
         "options": {
           "queryReplacement": "={{ $json.vecStr }}"
         },
