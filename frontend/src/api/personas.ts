@@ -4,6 +4,7 @@ export interface Persona {
   nro_documento: string;
   tipo_documento: string;
   primer_nombre: string;
+  segundo_nombre?: string;
   apellidos: string;
   correo: string;
   celular: string;
@@ -18,12 +19,13 @@ export interface CrearPersonaInput {
   tipo_documento: string;
   nro_documento: string;
   primer_nombre: string;
+  segundo_nombre?: string;
   apellidos: string;
   correo: string;
   celular: string;
   fecha_nacimiento: string;
   genero: string;
-  foto_key?: string;
+  foto_object_key?: string;
 }
 
 export interface PresignedUrlResponse {
@@ -68,6 +70,17 @@ export async function borrarPersona(doc: string): Promise<{ resultado: 'DELETED'
   return apiClient.delete(`personas/${doc}`).json();
 }
 
-export async function getPresignedUrl(doc: string, filename: string): Promise<PresignedUrlResponse> {
-  return apiClient.post('personas/_upload-url', { json: { nro_documento: doc, filename } }).json<PresignedUrlResponse>();
+export async function getPresignedUrl(doc: string, file: File): Promise<PresignedUrlResponse> {
+  const rawExt = file.name.split('.').pop()?.toLowerCase() ?? '';
+  const ext: 'jpg' | 'png' = rawExt === 'png' ? 'png' : 'jpg'; // jpeg/jpg → 'jpg'
+  return apiClient
+    .post('personas/_upload-url', {
+      json: {
+        nro_documento: doc,
+        ext,
+        contentType: file.type,
+        sizeBytes: file.size,
+      },
+    })
+    .json<PresignedUrlResponse>();
 }

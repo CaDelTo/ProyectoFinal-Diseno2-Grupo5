@@ -9,20 +9,23 @@ export interface StorageClient {
 
 export function createStorageClient(config: {
   endpoint: string;
+  /** Endpoint público para las URLs prefirmadas (accesible desde el browser). */
+  publicEndpoint?: string;
   bucket: string;
   accessKey: string;
   secretKey: string;
   region?: string;
 }): StorageClient {
-  const client = new S3Client({
-    endpoint: config.endpoint,
-    region: config.region ?? 'us-east-1',
-    credentials: {
-      accessKeyId: config.accessKey,
-      secretAccessKey: config.secretKey,
-    },
-    forcePathStyle: true,
-  });
+  const makeClient = (endpoint: string) =>
+    new S3Client({
+      endpoint,
+      region: config.region ?? 'us-east-1',
+      credentials: { accessKeyId: config.accessKey, secretAccessKey: config.secretKey },
+      forcePathStyle: true,
+    });
+
+  const client       = makeClient(config.endpoint);
+  const publicClient = config.publicEndpoint ? makeClient(config.publicEndpoint) : client;
 
   return {
     async getPresignedPutUrl(objectKey, contentType, ttlSeconds) {
@@ -31,7 +34,8 @@ export function createStorageClient(config: {
         Key: objectKey,
         ContentType: contentType,
       });
-      return getSignedUrl(client, command, { expiresIn: ttlSeconds });
+      // Usa el cliente público para que la URL apunte al host accesible desde el browser
+      return getSignedUrl(publicClient, command, { expiresIn: ttlSeconds });
     },
 
     async objectExists(objectKey) {

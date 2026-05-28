@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getPersona, getPersonas } from '@/api/personas';
+import { getPersona, getPersonas, type Persona } from '@/api/personas';
 import { AppLayout } from '@/components/AppLayout';
+import type { HTTPError } from 'ky';
 
 const PAGE_SIZE = 10;
 
@@ -9,6 +10,20 @@ const estadoBadge = (estado: string | undefined) =>
   estado === 'ACTIVO'
     ? 'inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800'
     : 'inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600';
+
+/** Devuelve el status HTTP del error, o 0 si es error de red. */
+function errorStatus(err: unknown): number {
+  if (err && typeof (err as HTTPError).response?.status === 'number') {
+    return (err as HTTPError).response.status;
+  }
+  return 0; // TypeError de red / fetch failed
+}
+
+/** El servicio de consulta está caído (502/503/504 o sin conexión). */
+function isServiceDown(err: unknown): boolean {
+  const s = errorStatus(err);
+  return s === 0 || s === 502 || s === 503 || s === 504;
+}
 
 export function ConsultarPersonaPage() {
   const [docInput, setDocInput]   = useState('');
@@ -23,6 +38,7 @@ export function ConsultarPersonaPage() {
     data: persona,
     isLoading: loadingOne,
     isError: errorOne,
+    error: errorOneObj,
   } = useQuery({
     queryKey: ['persona', docSearch],
     queryFn:  () => getPersona(docSearch),
@@ -35,10 +51,12 @@ export function ConsultarPersonaPage() {
     data: listData,
     isLoading: loadingList,
     isError: errorList,
+    error: errorListObj,
   } = useQuery({
     queryKey: ['personas', offset],
     queryFn:  () => getPersonas({ limit: PAGE_SIZE, offset }),
     enabled:  !isSearch,
+    retry:    1,
   });
 
   const handleSearch = (e: React.FormEvent) => {
@@ -106,16 +124,25 @@ export function ConsultarPersonaPage() {
           <>
             {loadingOne && <Spinner texto="Buscando..." />}
             {errorOne && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                No se encontró ninguna persona con el documento <strong>{docSearch}</strong>.
-              </div>
+              isServiceDown(errorOneObj)
+                ? <ServiceDownBanner />
+                : (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    No se encontró ninguna persona con el documento <strong>{docSearch}</strong>.
+                  </div>
+                )
             )}
             {persona && (
               <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden max-w-xl">
-                <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-                  <div>
-                    <h2 className="text-sm font-semibold text-gray-800">
-                      {persona.primer_nombre} {persona.apellidos}
+                {/* Encabezado con foto */}
+                <div className="px-6 py-5 border-b border-gray-100 bg-gray-50 flex items-center gap-4">
+                  {/* Avatar / foto */}
+                  <PersonaAvatar persona={persona} size="md" />
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-sm font-semibold text-gray-800 truncate">
+                      {persona.primer_nombre}
+                      {persona.segundo_nombre ? ` ${persona.segundo_nombre}` : ''}{' '}
+                      {persona.apellidos}
                     </h2>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {persona.tipo_documento} · {persona.nro_documento}
@@ -123,12 +150,19 @@ export function ConsultarPersonaPage() {
                   </div>
                   <span className={estadoBadge(persona.estado)}>{persona.estado ?? 'ACTIVO'}</span>
                 </div>
+
+                {/* Datos */}
                 <dl className="divide-y divide-gray-100">
                   {[
-                    { label: 'Correo electrónico', value: persona.correo },
-                    { label: 'Celular',             value: persona.celular },
-                    { label: 'Fecha de nacimiento', value: persona.fecha_nacimiento },
-                    { label: 'Género',              value: persona.genero },
+                    { label: 'Primer nombre',       value: persona.primer_nombre },
+                    ...(persona.segundo_nombre
+                      ? [{ label: 'Segundo nombre', value: persona.segundo_nombre }]
+                      : []),
+                    { label: 'Apellidos',            value: persona.apellidos },
+                    { label: 'Correo electrónico',   value: persona.correo },
+                    { label: 'Celular',              value: persona.celular },
+                    { label: 'Fecha de nacimiento',  value: persona.fecha_nacimiento },
+                    { label: 'Género',               value: persona.genero },
                   ].map(({ label, value }) => (
                     <div key={label} className="px-6 py-3 grid grid-cols-2 gap-4">
                       <dt className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</dt>
@@ -147,9 +181,13 @@ export function ConsultarPersonaPage() {
             {loadingList && <Spinner texto="Cargando personas..." />}
 
             {errorList && (
-              <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-                No se pudo cargar la lista de personas.
-              </div>
+              isServiceDown(errorListObj)
+                ? <ServiceDownBanner />
+                : (
+                  <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                    No se pudo cargar la lista de personas.
+                  </div>
+                )
             )}
 
             {listData && (
@@ -164,7 +202,7 @@ export function ConsultarPersonaPage() {
                   <table className="min-w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-200 bg-gray-50">
-                        {['Tipo', 'Documento', 'Nombre', 'Apellidos', 'Correo', 'Celular', 'Estado'].map((h) => (
+                        {['', 'Tipo', 'Documento', 'Nombre completo', 'Apellidos', 'Correo', 'Celular', 'Estado'].map((h) => (
                           <th
                             key={h}
                             className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap"
@@ -177,16 +215,23 @@ export function ConsultarPersonaPage() {
                     <tbody className="divide-y divide-gray-100">
                       {listData.data.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="px-4 py-10 text-center text-gray-400 text-sm">
+                          <td colSpan={8} className="px-4 py-10 text-center text-gray-400 text-sm">
                             No hay personas registradas
                           </td>
                         </tr>
                       ) : (
                         listData.data.map((p) => (
                           <tr key={p.nro_documento} className="hover:bg-gray-50 transition-colors">
+                            {/* Miniatura / avatar */}
+                            <td className="px-3 py-2 w-10">
+                              <PersonaAvatar persona={p} size="sm" />
+                            </td>
                             <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{p.tipo_documento}</td>
                             <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap">{p.nro_documento}</td>
-                            <td className="px-4 py-3 text-gray-900 whitespace-nowrap">{p.primer_nombre}</td>
+                            <td className="px-4 py-3 text-gray-900 whitespace-nowrap">
+                              {p.primer_nombre}
+                              {p.segundo_nombre ? ` ${p.segundo_nombre}` : ''}
+                            </td>
                             <td className="px-4 py-3 text-gray-900 whitespace-nowrap">{p.apellidos}</td>
                             <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{p.correo}</td>
                             <td className="px-4 py-3 font-mono text-xs text-gray-600 whitespace-nowrap">{p.celular}</td>
@@ -251,6 +296,28 @@ export function ConsultarPersonaPage() {
   );
 }
 
+function ServiceDownBanner() {
+  return (
+    <div className="rounded-xl border border-orange-200 bg-orange-50 p-5 flex items-start gap-4 shadow-sm">
+      {/* Icono */}
+      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+        <svg className="w-5 h-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round"
+            d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+        </svg>
+      </div>
+      {/* Texto */}
+      <div>
+        <p className="text-sm font-semibold text-orange-800">Servicio de consulta no disponible</p>
+        <p className="text-sm text-orange-700 mt-0.5">
+          El microservicio de consulta está apagado en este momento.
+        </p>
+        <p className="text-xs text-orange-500 mt-2 font-mono">ms-consultar · 503 / sin conexión</p>
+      </div>
+    </div>
+  );
+}
+
 function Spinner({ texto }: { texto: string }) {
   return (
     <div className="flex items-center gap-3 text-gray-500 text-sm">
@@ -259,6 +326,43 @@ function Spinner({ texto }: { texto: string }) {
         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
       </svg>
       {texto}
+    </div>
+  );
+}
+
+/** Avatar con foto o iniciales de fallback si la imagen no carga. */
+function PersonaAvatar({
+  persona,
+  size = 'md',
+}: {
+  persona: Pick<Persona, 'primer_nombre' | 'apellidos' | 'foto_url'>;
+  size?: 'sm' | 'md';
+}) {
+  const [error, setError] = useState(false);
+  const initials =
+    persona.primer_nombre.charAt(0).toUpperCase() +
+    persona.apellidos.charAt(0).toUpperCase();
+
+  const sizeClasses = size === 'sm'
+    ? 'w-8 h-8 text-xs'
+    : 'w-16 h-16 text-xl';
+
+  if (persona.foto_url && !error) {
+    return (
+      <img
+        src={persona.foto_url}
+        alt=""
+        onError={() => setError(true)}
+        className={`${sizeClasses} rounded-full object-cover ring-2 ring-white shadow-sm flex-shrink-0`}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`${sizeClasses} rounded-full bg-brand/10 flex items-center justify-center flex-shrink-0 ring-2 ring-white shadow-sm`}
+    >
+      <span className="font-bold text-brand">{initials}</span>
     </div>
   );
 }

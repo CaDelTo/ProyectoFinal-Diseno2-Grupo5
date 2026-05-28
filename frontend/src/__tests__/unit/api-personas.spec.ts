@@ -79,13 +79,19 @@ describe('api/personas — unit (mocking apiClient)', () => {
     expect(result).toEqual({ resultado: 'DELETED' });
   });
 
-  it('getPresignedUrl usa POST con nro_documento y filename', async () => {
+  it('getPresignedUrl usa POST con nro_documento, ext, contentType y sizeBytes', async () => {
     mockPost.mockReturnValue(makeJsonFn({ uploadUrl: 'http://s3/url', objectKey: 'fotos/abc.jpg' }));
 
-    const result = await getPresignedUrl('1234567890', 'foto.jpg');
+    const fakeFile = new File(['data'], 'foto.jpg', { type: 'image/jpeg' });
+    const result = await getPresignedUrl('1234567890', fakeFile);
 
     expect(mockPost).toHaveBeenCalledWith('personas/_upload-url', {
-      json: { nro_documento: '1234567890', filename: 'foto.jpg' },
+      json: {
+        nro_documento: '1234567890',
+        ext: 'jpg',
+        contentType: 'image/jpeg',
+        sizeBytes: fakeFile.size,
+      },
     });
     expect(result).toEqual({ uploadUrl: 'http://s3/url', objectKey: 'fotos/abc.jpg' });
   });

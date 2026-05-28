@@ -15,17 +15,20 @@ function requireEnv(name: string): string {
 const prisma = new PrismaClient();
 
 const storageEndpoint = requireEnv('STORAGE_ENDPOINT');
+const storagePublicEndpoint = process.env['STORAGE_PUBLIC_ENDPOINT'] ?? storageEndpoint;
 const storageBucket = requireEnv('STORAGE_BUCKET');
 
 const storage = createStorageClient({
   endpoint: storageEndpoint,
+  publicEndpoint: storagePublicEndpoint,
   bucket: storageBucket,
   accessKey: requireEnv('STORAGE_ACCESS_KEY'),
   secretKey: requireEnv('STORAGE_SECRET_KEY'),
 });
 
+/** URL pública de la foto, accesible desde el browser. */
 function buildFotoUrl(objectKey: string): string {
-  return `${storageEndpoint}/${storageBucket}/${objectKey}`;
+  return `${storagePublicEndpoint}/${storageBucket}/${objectKey}`;
 }
 
 const app = createApp({

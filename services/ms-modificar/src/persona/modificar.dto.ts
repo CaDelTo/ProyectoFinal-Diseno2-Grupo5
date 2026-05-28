@@ -11,7 +11,8 @@ export const ModificarPersonaSchema = z
     fecha_nacimiento: z
       .string()
       .datetime()
-      .or(z.string().regex(/^\d{2}-[a-z]{3}-\d{4}$/))
+      .or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/))   // YYYY-MM-DD (formato que devuelve la API)
+      .or(z.string().regex(/^\d{2}-[a-z]{3}-\d{4}$/)) // dd-mmm-yyyy (formato legacy)
       .optional(),
     genero: z.enum(['MASCULINO', 'FEMENINO', 'NO_BINARIO', 'PREFIERO_NO_REPORTAR']).optional(),
     correo: z.string().email().optional(),

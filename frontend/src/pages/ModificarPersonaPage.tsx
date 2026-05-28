@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { PersonaForm } from '@/components/PersonaForm';
-import { getPersona, modificarPersona, type Persona } from '@/api/personas';
+import { PersonaForm, type PersonaFormValues } from '@/components/PersonaForm';
+import { getPersona, getPresignedUrl, modificarPersona, type Persona } from '@/api/personas';
 import { ProblemDetailsToast } from '@/components/ProblemDetailsToast';
 import { AppLayout } from '@/components/AppLayout';
 import { extractProblemDetails, type ProblemDetails, type FieldError } from '@/lib/api-error';
@@ -14,6 +14,7 @@ export function ModificarPersonaPage() {
   const [conflict, setConflict] = useState(false);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [serverErrors, setServerErrors] = useState<FieldError[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const { data: persona } = useQuery({
     queryKey: ['persona', docToFetch],
@@ -116,23 +117,54 @@ export function ModificarPersonaPage() {
             <PersonaForm
               key={persona.nro_documento}
               mode="editar"
+              currentFotoUrl={persona.foto_url ?? null}
               defaultValues={{
-                tipo_documento: persona.tipo_documento,
+                tipo_documento: persona.tipo_documento as PersonaFormValues['tipo_documento'],
                 nro_documento: persona.nro_documento,
                 primer_nombre: persona.primer_nombre,
+                segundo_nombre: persona.segundo_nombre ?? '',
                 apellidos: persona.apellidos,
                 correo: persona.correo,
                 celular: persona.celular,
                 fecha_nacimiento: persona.fecha_nacimiento,
-                genero: persona.genero,
+                genero: persona.genero as PersonaFormValues['genero'],
               }}
               serverErrors={serverErrors}
-              isLoading={mutation.isPending}
-              onSubmit={(data) => {
+              isLoading={uploading || mutation.isPending}
+              onSubmit={async (data) => {
                 setSuccess(false);
                 setConflict(false);
                 setProblem(null);
-                mutation.mutate(data);
+
+                let foto_object_key: string | null | undefined;
+                const fotoFiles = data.foto as FileList | undefined;
+                if (fotoFiles && fotoFiles.length > 0) {
+                  setUploading(true);
+                  try {
+                    const file = fotoFiles.item(0);
+                    if (!file) throw new Error('No se pudo leer el archivo.');
+                    const { uploadUrl, objectKey } = await getPresignedUrl(data.nro_documento, file);
+                    await fetch(uploadUrl, {
+                      method: 'PUT',
+                      body: file,
+                      headers: { 'Content-Type': file.type },
+                    });
+                    foto_object_key = objectKey;
+                  } catch {
+                    setProblem({ title: 'Error al subir la foto. Intenta de nuevo.', status: 500 });
+                    setUploading(false);
+                    return;
+                  } finally {
+                    setUploading(false);
+                  }
+                }
+
+                const { foto: _foto, nro_documento: _doc, tipo_documento: _tipo, segundo_nombre, ...rest } = data;
+                mutation.mutate({
+                  ...rest,
+                  segundo_nombre: segundo_nombre || undefined,
+                  ...(foto_object_key !== undefined ? { foto_object_key } : {}),
+                });
               }}
             />
           </div>

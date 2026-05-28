@@ -47,6 +47,7 @@ services:
     volumes:
       - storage_data:/data
     ports:
+      - '9000:9000' # S3 API (presigned URLs desde el browser)
       - '9001:9001' # consola web
     networks:
       - internal
@@ -56,6 +57,27 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # Inicializa el bucket y lo deja en lectura pública (fotos de perfil)
+  storage-init:
+    image: minio/mc:latest
+    restart: 'no'
+    depends_on:
+      storage:
+        condition: service_healthy
+    networks:
+      - internal
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      STORAGE_BUCKET: ${STORAGE_BUCKET:-personas-fotos}
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set local http://storage:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD --api S3v4 &&
+        mc mb --ignore-existing local/$$STORAGE_BUCKET &&
+        mc anonymous set download local/$$STORAGE_BUCKET &&
+        echo 'storage-init: OK'
+      "
 
   # ============================================================ Gateway
   api-gateway:
@@ -124,6 +146,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      STORAGE_PUBLIC_ENDPOINT: ${STORAGE_PUBLIC_ENDPOINT:-http://localhost:9000}
       STORAGE_BUCKET: ${STORAGE_BUCKET}
       STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
       STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
@@ -150,6 +173,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      STORAGE_PUBLIC_ENDPOINT: ${STORAGE_PUBLIC_ENDPOINT:-http://localhost:9000}
       STORAGE_BUCKET: ${STORAGE_BUCKET}
       STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
       STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}

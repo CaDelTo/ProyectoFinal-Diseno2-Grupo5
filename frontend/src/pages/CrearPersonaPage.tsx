@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { PersonaForm } from '@/components/PersonaForm';
-import { crearPersona } from '@/api/personas';
+import { PersonaForm, type PersonaFormValues } from '@/components/PersonaForm';
+import { crearPersona, getPresignedUrl } from '@/api/personas';
 import { ProblemDetailsToast } from '@/components/ProblemDetailsToast';
 import { AppLayout } from '@/components/AppLayout';
 import { extractProblemDetails, type ProblemDetails, type FieldError } from '@/lib/api-error';
@@ -10,6 +10,7 @@ export function CrearPersonaPage() {
   const [success, setSuccess] = useState(false);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [serverErrors, setServerErrors] = useState<FieldError[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const mutation = useMutation({
     mutationFn: crearPersona,
@@ -24,6 +25,45 @@ export function CrearPersonaPage() {
       setServerErrors(fieldErrors);
     },
   });
+
+  const handleSubmit = async (data: PersonaFormValues) => {
+    setProblem(null);
+    setServerErrors([]);
+
+    let foto_object_key: string | undefined;
+
+    // Si el usuario seleccionó una foto, subirla primero
+    const fotoFiles = data.foto as FileList | undefined;
+    if (fotoFiles && fotoFiles.length > 0) {
+      setUploading(true);
+      try {
+        const file = fotoFiles.item(0);
+        if (!file) throw new Error('No se pudo leer el archivo.');
+        const { uploadUrl, objectKey } = await getPresignedUrl(data.nro_documento, file);
+        await fetch(uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: { 'Content-Type': file.type },
+        });
+        foto_object_key = objectKey;
+      } catch {
+        setProblem({ title: 'Error al subir la foto. Intenta de nuevo.', status: 500 });
+        setUploading(false);
+        return;
+      } finally {
+        setUploading(false);
+      }
+    }
+
+    const { foto: _foto, segundo_nombre, ...rest } = data;
+    mutation.mutate({
+      ...rest,
+      segundo_nombre: segundo_nombre || undefined,
+      foto_object_key,
+    });
+  };
+
+  const isLoading = uploading || mutation.isPending;
 
   return (
     <AppLayout title="Crear persona">
@@ -52,12 +92,8 @@ export function CrearPersonaPage() {
               <PersonaForm
                 mode="crear"
                 serverErrors={serverErrors}
-                isLoading={mutation.isPending}
-                onSubmit={(data) => {
-                  setProblem(null);
-                  setServerErrors([]);
-                  mutation.mutate(data);
-                }}
+                isLoading={isLoading}
+                onSubmit={handleSubmit}
               />
             </div>
           </>

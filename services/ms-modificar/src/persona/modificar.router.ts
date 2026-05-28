@@ -43,6 +43,25 @@ export function createModificarRouter(deps: RouterDeps): Router {
 
       const dto = parsed.data;
       const dbData: Record<string, unknown> = { ...dto };
+
+      // Convierte fecha_nacimiento (string) a Date para Prisma
+      if (dto.fecha_nacimiento) {
+        const raw = dto.fecha_nacimiento;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+          dbData['fecha_nacimiento'] = new Date(raw + 'T00:00:00Z');
+        } else if (/^\d{4}-\d{2}-\d{2}T/.test(raw)) {
+          dbData['fecha_nacimiento'] = new Date(raw);
+        } else {
+          // formato dd-mmm-yyyy
+          const MESES: Record<string, number> = {
+            jan:0,feb:1,mar:2,apr:3,may:4,jun:5,
+            jul:6,aug:7,sep:8,oct:9,nov:10,dec:11,
+          };
+          const m = raw.match(/^(\d{2})-([a-z]{3})-(\d{4})$/);
+          if (m) dbData['fecha_nacimiento'] = new Date(Date.UTC(+m[3]!, MESES[m[2]!]!, +m[1]!));
+        }
+      }
+
       if ('foto_object_key' in dto) {
         dbData['foto_url'] = dto.foto_object_key ? deps.buildFotoUrl(dto.foto_object_key) : null;
         delete dbData['foto_object_key'];

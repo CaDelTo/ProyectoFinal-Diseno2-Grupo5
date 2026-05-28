@@ -12,11 +12,31 @@ describe('spec 010 — PersonaForm', () => {
     expect(screen.getByLabelText(/tipo de documento/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/número de documento/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/primer nombre/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/segundo nombre/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/apellidos/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/correo/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/celular/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/fecha de nacimiento/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/género/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/foto/i)).toBeInTheDocument();
+  });
+
+  it('tipo_documento solo tiene las opciones Cédula y Tarjeta de identidad', () => {
+    render(<PersonaForm mode="crear" onSubmit={noop} />);
+    const select = screen.getByLabelText(/tipo de documento/i);
+    const options = Array.from((select as HTMLSelectElement).options).map((o) => o.value);
+    expect(options).toContain('CEDULA');
+    expect(options).toContain('TARJETA_IDENTIDAD');
+    expect(options).not.toContain('PASAPORTE');
+  });
+
+  it('género tiene exactamente 4 opciones válidas', () => {
+    render(<PersonaForm mode="crear" onSubmit={noop} />);
+    const select = screen.getByLabelText(/género/i);
+    const options = Array.from((select as HTMLSelectElement).options)
+      .map((o) => o.value)
+      .filter(Boolean);
+    expect(options).toEqual(['MASCULINO', 'FEMENINO', 'NO_BINARIO', 'PREFIERO_NO_REPORTAR']);
   });
 
   it('valida tipo_documento requerido', async () => {
@@ -56,6 +76,18 @@ describe('spec 010 — PersonaForm', () => {
     });
   });
 
+  it('valida apellidos solo letras, máx 60', async () => {
+    const user = userEvent.setup();
+    render(<PersonaForm mode="crear" onSubmit={noop} />);
+
+    await user.type(screen.getByLabelText(/apellidos/i), '123');
+    await user.click(screen.getByRole('button', { name: /guardar|crear|submit/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/solo letras/i)).toBeInTheDocument();
+    });
+  });
+
   it('valida correo formato RFC 5322', async () => {
     const user = userEvent.setup();
     render(<PersonaForm mode="crear" onSubmit={noop} />);
@@ -80,14 +112,10 @@ describe('spec 010 — PersonaForm', () => {
     });
   });
 
-  it('acepta fecha tipeada en dd-mmm-yyyy', async () => {
-    const user = userEvent.setup();
+  it('el campo fecha de nacimiento es un selector de calendario', () => {
     render(<PersonaForm mode="crear" onSubmit={noop} />);
-
     const dateInput = screen.getByLabelText(/fecha de nacimiento/i);
-    await user.type(dateInput, '15-ene-2000');
-
-    expect(dateInput).toHaveValue('15-ene-2000');
+    expect(dateInput).toHaveAttribute('type', 'date');
   });
 
   it('muestra mensaje por campo cuando backend devuelve 400 con errors[]', () => {

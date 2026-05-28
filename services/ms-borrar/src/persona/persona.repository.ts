@@ -31,6 +31,11 @@ export function createBorrarRepository(prisma: PrismaClient): BorrarRepository {
             },
           });
 
+          // Eliminar del índice RAG en ambos casos (DELETE e INACTIVAR)
+          await tx.ragDocIndice.deleteMany({
+            where: { fuente: `persona:${doc}` },
+          });
+
           if (nonCreateCount === 0) {
             await tx.persona.delete({ where: { nro_documento: doc } });
             await tx.logTransaccion.create({
