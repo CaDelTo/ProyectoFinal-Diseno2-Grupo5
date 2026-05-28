@@ -2,6 +2,7 @@ import { Prisma } from '@shared/db';
 import type { PrismaClient, Persona, TipoDocumento, Genero } from '@shared/db';
 import type { CrearPersonaDto } from '@shared/validators';
 import { buildLogDetalle } from './log-detalle-builder.js';
+import { indexPersonaRag } from './rag-indexer.js';
 
 export class DuplicateDocumentError extends Error {
   constructor() {
@@ -42,10 +43,11 @@ export function createPersonaRepository(
 ): PersonaRepository {
   return {
     async create(dto, userId, ip, userAgent) {
+      let persona: Persona;
       try {
-        return await prisma.$transaction(
+        persona = await prisma.$transaction(
           async (tx) => {
-            const persona = await tx.persona.create({
+            const created = await tx.persona.create({
               data: {
                 tipo_documento: dto.tipo_documento as TipoDocumento,
                 nro_documento: dto.nro_documento,
@@ -71,7 +73,7 @@ export function createPersonaRepository(
               },
             });
 
-            return persona;
+            return created;
           },
           { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
         );
@@ -84,6 +86,15 @@ export function createPersonaRepository(
         }
         throw err;
       }
+
+      // Fire-and-forget: indexa en RAG sin bloquear la respuesta ni propagar errores
+      indexPersonaRag(prisma, persona).catch((err: unknown) => {
+        process.stderr.write(
+          JSON.stringify({ event: 'rag.index.error', nro_documento: persona.nro_documento, err: String(err) }) + '\n',
+        );
+      });
+
+      return persona;
     },
   };
 }

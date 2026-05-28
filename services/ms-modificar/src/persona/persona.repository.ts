@@ -3,6 +3,7 @@ import type { PrismaClient, Persona } from '@shared/db';
 import { ProblemDetailsError } from '@shared/errors';
 import { computeDiff, type Diff } from './diff.js';
 import { buildUpdateLogDetalle } from './log-detalle.js';
+import { indexPersonaRag } from './rag-indexer.js';
 
 export interface PersonaDto {
   id_persona: string;
@@ -50,8 +51,9 @@ function toDto(p: Persona): PersonaDto {
 export function createModificarRepository(prisma: PrismaClient): ModificarRepository {
   return {
     async update(doc, data, ifMatch, userId, ip, ua) {
+      let result: UpdateResult;
       try {
-        return await prisma.$transaction(
+        result = await prisma.$transaction(
           async (tx) => {
             const actual = await tx.persona.findUnique({ where: { nro_documento: doc } });
 
@@ -100,6 +102,17 @@ export function createModificarRepository(prisma: PrismaClient): ModificarReposi
         }
         throw err;
       }
+
+      // Fire-and-forget: re-indexa en RAG si hubo cambios reales
+      if (!result.isNoop) {
+        indexPersonaRag(prisma, result.persona).catch((err: unknown) => {
+          process.stderr.write(
+            JSON.stringify({ event: 'rag.index.error', nro_documento: doc, err: String(err) }) + '\n',
+          );
+        });
+      }
+
+      return result;
     },
   };
 }
