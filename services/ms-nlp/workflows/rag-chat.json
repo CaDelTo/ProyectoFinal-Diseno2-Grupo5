@@ -2,137 +2,271 @@
   "name": "RAG Chat",
   "nodes": [
     {
-      "id": "chat-trigger",
+      "id": "38ceca67-da69-440a-a8cb-010e7a11356f",
       "name": "Chat Trigger",
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
-      "position": [240, 300],
+      "position": [
+        260,
+        300
+      ],
+      "webhookId": "38ceca67-da69-440a-a8cb-010e7a11356f",
       "parameters": {
-        "public": false,
+        "mode": "hostedChat",
+        "public": true,
         "options": {}
-      }
+      },
+      "typeVersion": 1.4
     },
     {
-      "id": "set-request-id",
-      "name": "Set Request ID",
+      "id": "get-embedding",
+      "name": "Get Embedding",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        500,
+        300
+      ],
+      "parameters": {
+        "url": "={{ 'https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=' + $env.GEMINI_API_KEY }}",
+        "method": "POST",
+        "options": {},
+        "jsonBody": "={{ { model: 'models/gemini-embedding-001', content: { parts: [{ text: $json.chatInput }] } } }}",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json"
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "prepare-vector",
+      "name": "Prepare Vector",
       "type": "n8n-nodes-base.code",
-      "position": [460, 300],
+      "position": [
+        740,
+        300
+      ],
       "parameters": {
-        "jsCode": "const { v7: uuidv7 } = require('uuid');\nconst requestId = $input.first().json.requestId ?? uuidv7();\nreturn [{ json: { ...($input.first().json), requestId } }];"
-      }
-    },
-    {
-      "id": "validate-message",
-      "name": "Validar message",
-      "type": "n8n-nodes-base.code",
-      "position": [680, 300],
-      "parameters": {
-        "jsCode": "const message = $input.first().json.message ?? '';\nif (!message || message.trim().length === 0) {\n  return [{ json: { answer: 'Pregunta no válida. Por favor escribe tu pregunta.', sources: [] } }];\n}\nif (message.length > 500) {\n  return [{ json: { answer: 'Pregunta demasiado larga (máximo 500 caracteres).', sources: [] } }];\n}\nreturn [{ json: $input.first().json }];"
-      }
-    },
-    {
-      "id": "embed-query",
-      "name": "Embed Query",
-      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
-      "position": [900, 300],
-      "parameters": {
-        "model": "text-embedding-3-small",
-        "options": {}
-      }
+        "jsCode": "const values = $input.first().json.embedding?.values ?? [];\nconst vecStr = '[' + values.join(',') + ']';\nconst message = $('Chat Trigger').first().json.chatInput;\nreturn [{ json: { vecStr, message } }];",
+        "language": "javaScript"
+      },
+      "typeVersion": 2
     },
     {
       "id": "retrieve-context",
       "name": "Retrieve Context",
       "type": "n8n-nodes-base.postgres",
-      "position": [1120, 300],
+      "position": [
+        980,
+        300
+      ],
       "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT fuente, contenido_resumido FROM \"RagDocIndice\" ORDER BY embedding <-> $1::vector LIMIT 5;",
-        "additionalFields": {}
-      }
+        "query": "SELECT fuente, contenido_resumido FROM rag_doc_indice ORDER BY embedding <-> $1::vector LIMIT 5",
+        "options": {
+          "queryReplacement": "={{ $json.vecStr }}"
+        },
+        "operation": "executeQuery"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "jwmJZvXfgVvLvayB",
+          "name": "Postgres RAG"
+        }
+      },
+      "typeVersion": 2.6,
+      "alwaysOutputData": true
     },
     {
       "id": "build-prompt",
       "name": "Build Prompt",
       "type": "n8n-nodes-base.code",
-      "position": [1340, 300],
+      "position": [
+        1220,
+        300
+      ],
       "parameters": {
-        "jsCode": "const message = $('Chat Trigger').first().json.message;\nconst docs = $input.all();\nconst context = docs.map(d => d.json.contenido_resumido);\n\nconst systemInstruction = `Eres un asistente que responde preguntas sobre el registro de personas de la institución. Usa únicamente los datos provistos en el CONTEXTO. Si la respuesta no está en el contexto, di \"No tengo información suficiente\". Responde en español, una sola oración.`;\nconst contextText = context.map(c => `- ${c}`).join('\\n');\nconst prompt = `${systemInstruction}\\n\\nCONTEXTO:\\n${contextText}\\n\\nPREGUNTA: ${message}`;\n\nreturn [{ json: { prompt, message, documents: docs.map(d => d.json), sources: docs.map(d => ({ nro_documento: d.json.fuente.replace('persona:', '') })) } }];"
-      }
+        "jsCode": "const message = $(\"Chat Trigger\").first().json.chatInput;\nconst docs = $input.all();\nconst context = docs.map(d => d.json.contenido_resumido).filter(Boolean).join(\"\\n\");\nconst sources = docs.filter(d => d.json.fuente).map(d => ({ nro_documento: d.json.fuente.replace(\"persona:\", \"\") }));\nreturn [{ json: { context: context || \"(sin registros)\", message, sources } }];",
+        "language": "javaScript"
+      },
+      "typeVersion": 2
     },
     {
-      "id": "llm-call",
-      "name": "LLM Call",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "position": [1560, 300],
+      "id": "call-llm",
+      "name": "Call LLM",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1460,
+        300
+      ],
       "parameters": {
-        "model": "gpt-4o-mini",
-        "options": {
-          "temperature": 0.2,
-          "maxTokens": 200
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "method": "POST",
+        "options": {},
+        "jsonBody": "={{ { model: \"llama-3.1-8b-instant\", messages: [{ role: \"system\", content: \"Eres un asistente del sistema de registro de personas de Uninorte. Responde UNICAMENTE con la información del CONTEXTO.\\nReglas estrictas:\\n1. Si la pregunta menciona un número de cédula o documento, responde SOLO sobre esa persona.\\n2. Si la pregunta usa \\\"su información\\\", \\\"él\\\", \\\"ella\\\" u otros pronombres SIN número de documento, responde SOLO sobre la PRIMERA persona del CONTEXTO.\\n3. Para preguntas de conteo o listado general (cuántas personas, quiénes están), usa todo el CONTEXTO.\\n4. Si la persona preguntada NO aparece en el CONTEXTO, responde exactamente: \\\"No, no existe ninguna persona con ese dato registrada en el sistema.\\\"\\n5. Nunca digas \\\"no tengo información suficiente\\\".\\nResponde siempre en español.\" }, { role: \"user\", content: \"CONTEXTO:\\n\" + $(\"Build Prompt\").first().json.context + \"\\n\\nPREGUNTA: \" + $(\"Build Prompt\").first().json.message }], temperature: 0.1, max_tokens: 300 } }}",
+        "sendBody": true,
+        "contentType": "json",
+        "sendHeaders": true,
+        "specifyBody": "json",
+        "temperature": 0.1,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.GROQ_API_KEY }}"
+            }
+          ]
         }
-      }
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "format-response",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1700,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const answer = $input.first().json.choices?.[0]?.message?.content ?? 'Sin respuesta.';\nconst sources = $('Build Prompt').first().json.sources ?? [];\nreturn [{ json: { output: answer, sources } }];",
+        "language": "javaScript"
+      },
+      "typeVersion": 2
     },
     {
       "id": "log-query",
       "name": "Log QUERY_NL",
       "type": "n8n-nodes-base.httpRequest",
-      "position": [1780, 300],
+      "position": [
+        1940,
+        300
+      ],
       "parameters": {
+        "url": "http://ms-log:4005/api/v1/logs/internal",
         "method": "POST",
-        "url": "http://api-gateway/api/v1/logs/internal",
+        "options": {},
+        "jsonBody": "={{ { tipo_transaccion: 'QUERY_NL', pregunta_rag: $('Chat Trigger').first().json.chatInput, respuesta_rag: $('Format Response').first().json.output } }}",
+        "sendBody": true,
+        "contentType": "json",
         "sendHeaders": true,
+        "specifyBody": "json",
         "headerParameters": {
           "parameters": [
-            { "name": "X-Internal-Token", "value": "={{ $env.INTERNAL_TOKEN }}" },
-            { "name": "Content-Type", "value": "application/json" }
-          ]
-        },
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            { "name": "tipo_transaccion", "value": "QUERY_NL" },
-            { "name": "id_usuario", "value": "={{ $('Chat Trigger').first().json.userId ?? '' }}" },
-            { "name": "pregunta_rag", "value": "={{ $('Chat Trigger').first().json.message }}" },
-            { "name": "respuesta_rag", "value": "={{ $('LLM Call').first().json.message }}" },
-            { "name": "detalle", "value": "={{ JSON.stringify({ sources: $('Build Prompt').first().json.sources }) }}" }
+            {
+              "name": "X-Internal-Token",
+              "value": "={{ $env.INTERNAL_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         }
-      }
+      },
+      "typeVersion": 4,
+      "continueOnFail": true
     },
     {
-      "id": "respond-to-chat",
-      "name": "Respond to Chat",
-      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
-      "position": [2000, 300],
+      "id": "chat-response",
+      "name": "Chat Response",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        2180,
+        300
+      ],
       "parameters": {
-        "respondWith": "allIncomingItems"
-      }
+        "jsCode": "// Retorna la respuesta de la IA al chat de n8n\nconst output = $('Format Response').first().json.output;\nconst sources = $('Format Response').first().json.sources ?? [];\nreturn [{ json: { output, sources } }];",
+        "language": "javaScript"
+      },
+      "typeVersion": 2
     }
   ],
   "connections": {
     "Chat Trigger": {
-      "main": [[{ "node": "Set Request ID", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Get Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
-    "Set Request ID": {
-      "main": [[{ "node": "Validar message", "type": "main", "index": 0 }]]
+    "Get Embedding": {
+      "main": [
+        [
+          {
+            "node": "Prepare Vector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
-    "Validar message": {
-      "main": [[{ "node": "Embed Query", "type": "main", "index": 0 }]]
-    },
-    "Embed Query": {
-      "main": [[{ "node": "Retrieve Context", "type": "main", "index": 0 }]]
+    "Prepare Vector": {
+      "main": [
+        [
+          {
+            "node": "Retrieve Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Retrieve Context": {
-      "main": [[{ "node": "Build Prompt", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Build Prompt": {
-      "main": [[{ "node": "LLM Call", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Call LLM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
-    "LLM Call": {
-      "main": [[{ "node": "Log QUERY_NL", "type": "main", "index": 0 }]]
+    "Call LLM": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "Log QUERY_NL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Log QUERY_NL": {
-      "main": [[{ "node": "Respond to Chat", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Chat Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -140,7 +274,7 @@
   },
   "staticData": null,
   "meta": {
-    "templateCredsSetupCompleted": false
+    "templateCredsSetupCompleted": true
   },
   "pinData": {}
 }
